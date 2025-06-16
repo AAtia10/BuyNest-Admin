@@ -10,7 +10,7 @@ import com.example.buynest.views.categories.CategoriesScreen
 import com.example.buynest.views.favourites.FavouriteScreen
 import com.example.buynest.views.home.HomeScreen
 import com.example.buynest.views.profile.ProfileScreen
-import com.example.buynest_admin.views.authentication.LoginScreen
+import com.example.buynest_admin.views.authentication.login.view.LoginScreen
 import com.example.buynest_admin.views.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)

@@ -115,9 +115,9 @@ class MainActivity : ComponentActivity() {
         window.navigationBarColor = White.toArgb()
     }
 
-    private fun shouldShowBottomBar(navController: NavHostController): Boolean {
-        val route = navController.currentBackStackEntry?.destination?.route
-        return route != RoutesScreens.Login.route && route != "splash"
-    }
+//    private fun shouldShowBottomBar(navController: NavHostController): Boolean {
+//        val route = navController.currentBackStackEntry?.destination?.route
+//        return route != RoutesScreens.Login.route && route != "splash"
+//    }
 
 }
