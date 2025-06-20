@@ -1,7 +1,7 @@
 package com.example.buynest.views.categories
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
+
+import com.example.buynest_admin.model.Product
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -31,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,25 +42,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.buynest_admin.R
+import coil.compose.AsyncImage
+import com.example.buynest_admin.remote.RemoteDataSourceImpl
+import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
+import com.example.buynest_admin.repo.ProductRepository
 import com.example.buynest_admin.ui.theme.MainColor
+import com.example.buynest_admin.views.categories.viewModel.ProductViewModel
 
 
 @Composable
 fun CategoriesScreen() {
+    val viewModel = remember {
+        ProductViewModel(
+            ProductRepository(
+                RemoteDataSourceImpl(ShopifyRetrofitBuilder.service)
+            )
+        )
+    }
 
-    val sampleProducts = listOf(
-        Product("Classic Backpack", "Adidas", "Accessories", 20, 100.0, R.drawable.bag),
-        Product("Classic Backpack | Legend Ink", "Adidas", "Accessories", 9, 50.0, R.drawable.bag),
-        Product("Kid's Stan Smith", "Adidas", "Shoes", 28, 90.0, R.drawable.bag),
-        Product("Classic Backpack", "Adidas", "Accessories", 20, 100.0, R.drawable.bag),
-        Product("Classic Backpack | Legend Ink", "Adidas", "Accessories", 9, 50.0, R.drawable.bag),
-        Product("Kid's Stan Smith", "Adidas", "Shoes", 28, 90.0, R.drawable.bag),
-    )
+    val products by viewModel.products.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { /* Add product */ }, containerColor = MainColor) {
@@ -79,11 +85,22 @@ fun CategoriesScreen() {
                 modifier = Modifier.padding(16.dp)
             )
 
-            SearchBar()
+            SearchBar(viewModel = viewModel)
 
-            LazyColumn {
-                items(sampleProducts) { product ->
-                    ProductCard(product)
+            if (isLoading) {
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MainColor)
+                }
+            } else {
+                LazyColumn {
+                    items(products) { product ->
+                        ProductCard(product)
+                    }
                 }
             }
         }
@@ -101,9 +118,9 @@ fun ProductCard(product: Product) {
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
-            Image(
-                painter = painterResource(product.imageRes),
-                contentDescription = product.name,
+            AsyncImage(
+                model = product.image.src,
+                contentDescription = product.title,
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(12.dp)),
@@ -114,18 +131,18 @@ fun ProductCard(product: Product) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = product.name.uppercase(),
+                    text = product.title.uppercase(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${product.brand}, ${product.category}",
+                    text = "${product.vendor}, ${product.product_type}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("${product.stock} In Stock", style = MaterialTheme.typography.bodySmall)
-                Text("${product.price} $", style = MaterialTheme.typography.bodyMedium)
+                Text("${product.variants.firstOrNull()?.inventory_quantity ?: 0} In Stock", style = MaterialTheme.typography.bodySmall)
+                Text("${product.variants.firstOrNull()?.price ?: "0.0"} EGP", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -133,7 +150,7 @@ fun ProductCard(product: Product) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar() {
+fun SearchBar(viewModel: ProductViewModel) {
     var query by remember { mutableStateOf("") }
 
     Box(
@@ -146,7 +163,10 @@ fun SearchBar() {
     ) {
         TextField(
             value = query,
-            onValueChange = { query = it },
+            onValueChange = {
+                query = it
+                viewModel.onSearch(it)
+            },
             placeholder = { Text("Search", fontSize = 14.sp) },
             singleLine = true,
             modifier = Modifier
@@ -164,12 +184,5 @@ fun SearchBar() {
     }
 }
 
-data class Product(
-    val name: String,
-    val brand: String,
-    val category: String,
-    val stock: Int,
-    val price: Double,
-    @DrawableRes val imageRes: Int
-)
+
 
