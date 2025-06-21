@@ -1,6 +1,5 @@
 package com.example.buynest.views.favourites
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
@@ -47,13 +47,7 @@ import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.viewModels.OffersViewModel
 import com.example.buynest_admin.viewModels.OffersViewModelFactory
 
-data class Offer(
-    val title: String,
-    val startDate: String,
-    val endDate: String?,
-    val discountInfo: String,
-    val maxUsages: Int
-)
+
 
 @Composable
 fun OffersScreen() {
@@ -66,6 +60,7 @@ fun OffersScreen() {
     )
 
     val priceRules by viewModel.priceRules.collectAsState()
+    val discountMap by viewModel.discountMap.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(Unit) {
@@ -110,7 +105,8 @@ fun OffersScreen() {
                     )
                 }
                 items(priceRules) { rule ->
-                    OfferCard(rule)
+                    val code = discountMap[rule.id]
+                    OfferCard(rule = rule, discountCode = code)
                 }
             }
         }
@@ -120,7 +116,7 @@ fun OffersScreen() {
 
 
 @Composable
-fun OfferCard(rule: PriceRule) {
+fun OfferCard(rule: PriceRule, discountCode: DiscountCode?) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -153,6 +149,11 @@ fun OfferCard(rule: PriceRule) {
 
             rule.usage_limit?.toString()?.takeIf { it != "0" && it != "null" }?.let {
                 OfferRow(icon = Icons.Default.ThumbUp, text = "Max usages: $it")
+            }
+
+            discountCode?.let {
+                OfferRow(icon = Icons.Default.LocalOffer, text = "Discount Code: ${it.code}")
+                OfferRow(icon = Icons.Default.ThumbUp, text = "Usage Count: ${it.usage_count}")
             }
         }
     }

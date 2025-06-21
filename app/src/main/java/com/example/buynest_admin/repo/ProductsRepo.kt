@@ -32,6 +32,8 @@ class ProductRepository(
         return remoteDataSource.getPriceRules()
     }
 
+    suspend fun getDiscountCodes(priceRuleId: Long) = remoteDataSource.getDiscountCodes(priceRuleId)
+
 
     suspend fun getBrands(): Flow<List<Brand>> {
         return remoteDataSource.getProducts()
