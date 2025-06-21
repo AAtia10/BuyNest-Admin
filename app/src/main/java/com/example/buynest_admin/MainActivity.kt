@@ -48,7 +48,15 @@ class MainActivity : ComponentActivity() {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
-        if (currentRoute == RoutesScreens.Login.route || currentRoute == "splash") {
+        val hideBottomBarRoutes = listOf(
+            RoutesScreens.Login.route,
+            "splash",
+            RoutesScreens.AvailableProducts.route
+        )
+        
+        val shouldHideBottomBar = currentRoute in hideBottomBarRoutes
+
+        if (shouldHideBottomBar) {
             SetupNavHost(mainNavController = navController)
         } else {
             Scaffold(

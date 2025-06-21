@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 
 
 @Composable
-fun FavouriteScreen() {
+fun OffersScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()

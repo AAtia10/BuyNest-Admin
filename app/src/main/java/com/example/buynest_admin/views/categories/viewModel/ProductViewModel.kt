@@ -29,6 +29,9 @@ class ProductViewModel(
     private val _searchQuery = MutableSharedFlow<String>(replay = 1)
     val searchQuery = _searchQuery.asSharedFlow()
 
+    private val _selectedBrand = MutableStateFlow<String?>(null)
+    val selectedBrand: StateFlow<String?> = _selectedBrand
+
     init {
         fetchProducts()
         handleSearch()
@@ -76,13 +79,21 @@ class ProductViewModel(
 
     fun fetchBrands() {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 repository.getBrands().collect {
                     _brands.value = it
                 }
             } catch (_: Exception) {
+            } finally {
+                _isLoading.value = false
             }
         }
+    }
+
+
+    fun setSelectedBrand(brand: String) {
+        _selectedBrand.value = brand
     }
 }
 
