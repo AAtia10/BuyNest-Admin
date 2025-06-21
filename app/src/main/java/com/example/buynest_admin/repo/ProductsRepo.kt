@@ -1,6 +1,7 @@
 package com.example.buynest_admin.repo
 
 import com.example.buynest_admin.model.Brand
+import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
 import com.example.buynest_admin.model.getBrandLogo
 import com.example.buynest_admin.remote.RemoteDataSource
@@ -27,6 +28,10 @@ class ProductRepository(
     suspend fun getProducts(): Flow<List<Product>> {
         return remoteDataSource.getProducts()
     }
+    suspend fun getPriceRules(): Flow<List<PriceRule>> {
+        return remoteDataSource.getPriceRules()
+    }
+
 
     suspend fun getBrands(): Flow<List<Brand>> {
         return remoteDataSource.getProducts()

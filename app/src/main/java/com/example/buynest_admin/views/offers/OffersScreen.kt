@@ -1,6 +1,7 @@
 package com.example.buynest.views.favourites
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,18 +23,29 @@ import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.buynest_admin.model.PriceRule
+import com.example.buynest_admin.remote.RemoteDataSourceImpl
+import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
+import com.example.buynest_admin.repo.ProductRepository
 import com.example.buynest_admin.ui.theme.MainColor
+import com.example.buynest_admin.viewModels.OffersViewModel
+import com.example.buynest_admin.viewModels.OffersViewModelFactory
 
 data class Offer(
     val title: String,
@@ -45,15 +57,20 @@ data class Offer(
 
 @Composable
 fun OffersScreen() {
-    val offers = listOf(
-        Offer("50% OFF", "30 June 2025 at 10:16", "2 July 2025 at 12:07", "-50.0% After 300.0$", 10),
-        Offer("80% OFF", "24 June 2025 at 12:07", "30 June 2025 at 12:07", "-100.0$ After 500.0$", 10),
-        Offer("100 Discount", "4 July 2025 at 19:48", "5 July 2025 at 19:48", "-10.0$ After 1000.0$", 3),
-        Offer("50% OFF", "30 June 2025 at 10:16", "2 July 2025 at 12:07", "-50.0% After 300.0$", 10),
-        Offer("80% OFF", "24 June 2025 at 12:07", "30 June 2025 at 12:07", "-100.0$ After 500.0$", 10),
-        Offer("100 Discount", "4 July 2025 at 19:48", "5 July 2025 at 19:48", "-10.0$ After 1000.0$", 3)
-
+    val viewModel: OffersViewModel = viewModel(
+        factory = OffersViewModelFactory(
+            ProductRepository.getInstance(
+                RemoteDataSourceImpl(ShopifyRetrofitBuilder.service)
+            )
+        )
     )
+
+    val priceRules by viewModel.priceRules.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchPriceRules()
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -67,29 +84,43 @@ fun OffersScreen() {
         },
         containerColor = Color.White
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 12.dp)
-        ) {
-            item {
-                Text(
-                    text = "Price Rules",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                )
+
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MainColor)
             }
-            items(offers) { offer ->
-                OfferCard(offer)
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 12.dp)
+            ) {
+                item {
+                    Text(
+                        text = "Price Rules",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+                items(priceRules) { rule ->
+                    OfferCard(rule)
+                }
             }
         }
     }
 }
 
 
+
 @Composable
-fun OfferCard(offer: Offer) {
+fun OfferCard(rule: PriceRule) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -106,20 +137,23 @@ fun OfferCard(offer: Offer) {
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = offer.title, style = MaterialTheme.typography.titleMedium)
+                Text(text = rule.title ?: "Untitled", style = MaterialTheme.typography.titleMedium)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            offer.startDate?.let {
-                OfferRow(icon = Icons.Default.Schedule, text = "Start: $it")
-            }
-            offer.endDate?.let {
+            OfferRow(icon = Icons.Default.Schedule, text = "Start: ${rule.starts_at}")
+
+
+            rule.ends_at?.toString()?.takeIf { it.isNotBlank() }?.let {
                 OfferRow(icon = Icons.Default.Event, text = "End: $it")
             }
 
-            OfferRow(icon = Icons.Default.AttachMoney, text = offer.discountInfo)
-            OfferRow(icon = Icons.Default.ThumbUp, text = "${offer.maxUsages} Max usages")
+            OfferRow(icon = Icons.Default.AttachMoney, text = "Value: ${rule.value} (${rule.value_type})")
+
+            rule.usage_limit?.toString()?.takeIf { it != "0" && it != "null" }?.let {
+                OfferRow(icon = Icons.Default.ThumbUp, text = "Max usages: $it")
+            }
         }
     }
 }
