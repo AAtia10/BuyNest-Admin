@@ -1,7 +1,9 @@
 package com.example.buynest_admin.views.categories.viewModel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.buynest_admin.model.Brand
 import com.example.buynest_admin.model.Product
 import com.example.buynest_admin.repo.ProductRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,6 +21,10 @@ class ProductViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _brands = MutableStateFlow<List<Brand>>(emptyList())
+    val brands: StateFlow<List<Brand>> = _brands
+
 
     private val _searchQuery = MutableSharedFlow<String>(replay = 1)
     val searchQuery = _searchQuery.asSharedFlow()
@@ -66,5 +72,26 @@ class ProductViewModel(
         viewModelScope.launch {
             _searchQuery.emit(query)
         }
+    }
+
+    fun fetchBrands() {
+        viewModelScope.launch {
+            try {
+                repository.getBrands().collect {
+                    _brands.value = it
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+}
+
+class ProductViewModelFactory(
+    private val repository: ProductRepository
+) : ViewModelProvider.Factory {
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return ProductViewModel(repository) as T
     }
 }

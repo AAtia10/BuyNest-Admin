@@ -3,6 +3,7 @@ package com.example.buynest.views.home
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -13,20 +14,26 @@ import androidx.compose.foundation.layout.height
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 
 import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,25 +43,37 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.buynest.views.categories.ProductCard
 
 import com.example.buynest_admin.R
-
-
-
+import com.example.buynest_admin.model.Brand
+import com.example.buynest_admin.remote.RemoteDataSourceImpl
+import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
+import com.example.buynest_admin.repo.ProductRepository
+import com.example.buynest_admin.ui.theme.MainColor
+import com.example.buynest_admin.views.categories.viewModel.ProductViewModel
+import com.example.buynest_admin.views.categories.viewModel.ProductViewModelFactory
 
 
 @Composable
 fun HomeScreen()  {
-    val brands = listOf(
-        Brand("ADIDAS", R.drawable.adidas_logo),
-        Brand("ASICS TIGER", R.drawable.adidas_logo),
-        Brand("CONVERSE", R.drawable.adidas_logo),
-        Brand("DR MARTENS", R.drawable.adidas_logo),
-        Brand("FLEX FIT", R.drawable.adidas_logo),
-        Brand("HERSCHEL", R.drawable.adidas_logo),
-        Brand("NIKE", R.drawable.adidas_logo),
-        Brand("VANS", R.drawable.adidas_logo)
+    val viewModel: ProductViewModel = viewModel(
+        factory = ProductViewModelFactory(
+            ProductRepository.getInstance(
+                RemoteDataSourceImpl(ShopifyRetrofitBuilder.service)
+            )
+        )
     )
+
+    val brands by viewModel.brands.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchBrands()
+    }
+
 
     Column(
         modifier = Modifier
@@ -66,18 +85,29 @@ fun HomeScreen()  {
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 16.dp)
         )
+        if (isLoading) {
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(brands) { brand ->
-                BrandCard(brand)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = MainColor)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(brands) { brand ->
+                    BrandCard(brand)
+                }
             }
         }
+
     }
 }
 
@@ -99,7 +129,7 @@ fun BrandCard(brand: Brand) {
             verticalArrangement = Arrangement.Center
         ) {
             Image(
-                painter = painterResource(id = brand.logo),
+                painter = painterResource(id = brand.logoRes),
                 contentDescription = brand.name,
                 modifier = Modifier
                     .size(60.dp)
@@ -112,7 +142,9 @@ fun BrandCard(brand: Brand) {
     }
 }
 
-data class Brand(val name: String, @DrawableRes val logo: Int)
+
+
+
 
 
 
