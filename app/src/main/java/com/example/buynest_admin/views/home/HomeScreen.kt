@@ -1,7 +1,7 @@
 package com.example.buynest.views.home
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,12 +14,10 @@ import androidx.compose.foundation.layout.height
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -44,9 +42,10 @@ import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.buynest.views.categories.ProductCard
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.buynest_admin.RoutesScreens
 
-import com.example.buynest_admin.R
 import com.example.buynest_admin.model.Brand
 import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
@@ -57,14 +56,7 @@ import com.example.buynest_admin.views.categories.viewModel.ProductViewModelFact
 
 
 @Composable
-fun HomeScreen()  {
-    val viewModel: ProductViewModel = viewModel(
-        factory = ProductViewModelFactory(
-            ProductRepository.getInstance(
-                RemoteDataSourceImpl(ShopifyRetrofitBuilder.service)
-            )
-        )
-    )
+fun HomeScreen(navController: NavHostController,viewModel: ProductViewModel)  {
 
     val brands by viewModel.brands.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -103,7 +95,10 @@ fun HomeScreen()  {
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(brands) { brand ->
-                    BrandCard(brand)
+                    BrandCard(brand){
+                        viewModel.setSelectedBrand(brand.name)
+                        navController.navigate(RoutesScreens.AvailableProducts.route)
+                    }
                 }
             }
         }
@@ -112,7 +107,7 @@ fun HomeScreen()  {
 }
 
 @Composable
-fun BrandCard(brand: Brand) {
+fun BrandCard(brand: Brand,onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -120,6 +115,7 @@ fun BrandCard(brand: Brand) {
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
+            .clickable { onClick() }
     ) {
         Column(
             modifier = Modifier
