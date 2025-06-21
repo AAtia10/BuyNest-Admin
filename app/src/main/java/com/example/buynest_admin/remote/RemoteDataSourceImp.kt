@@ -1,5 +1,6 @@
 package com.example.buynest_admin.remote
 
+import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,15 @@ class RemoteDataSourceImpl(
             emit(response.body()?.price_rules ?: emptyList())
         } else {
             throw Exception("Error: ${response.code()}")
+        }
+    }
+
+    override suspend fun getDiscountCodes(priceRuleId: Long): Flow<List<DiscountCode>> = flow {
+        val response = service.getDiscountCodes(priceRuleId)
+        if (response.isSuccessful) {
+            emit(response.body()?.discount_codes ?: emptyList())
+        } else {
+            throw Exception("Failed to load discount codes")
         }
     }
 }
