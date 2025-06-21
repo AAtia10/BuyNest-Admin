@@ -1,4 +1,4 @@
-package com.example.buynest_admin.views.categories.viewModel
+package com.example.buynest_admin.views.allProducts.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

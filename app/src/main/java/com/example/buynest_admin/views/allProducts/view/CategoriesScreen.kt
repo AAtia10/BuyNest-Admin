@@ -51,12 +51,12 @@ import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
 import com.example.buynest_admin.repo.ProductRepository
 import com.example.buynest_admin.ui.theme.MainColor
-import com.example.buynest_admin.views.categories.viewModel.ProductViewModel
-import com.example.buynest_admin.views.categories.viewModel.ProductViewModelFactory
+import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
+import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModelFactory
 
 
 @Composable
-fun CategoriesScreen() {
+fun AllProductsScreen() {
     val viewModel: ProductViewModel = viewModel(
         factory = ProductViewModelFactory(
             ProductRepository.getInstance(
