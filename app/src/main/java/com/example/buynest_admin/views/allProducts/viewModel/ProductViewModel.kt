@@ -32,6 +32,14 @@ class ProductViewModel(
     private val _selectedBrand = MutableStateFlow<String?>(null)
     val selectedBrand: StateFlow<String?> = _selectedBrand
 
+    private val _selectedProduct = MutableStateFlow<Product?>(null)
+    val selectedProduct: StateFlow<Product?> = _selectedProduct
+
+    fun setSelectedProduct(product: Product) {
+        _selectedProduct.value = product
+    }
+
+
     init {
         fetchProducts()
         handleSearch()

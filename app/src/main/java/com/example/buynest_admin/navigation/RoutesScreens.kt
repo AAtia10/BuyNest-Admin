@@ -11,4 +11,5 @@ sealed class RoutesScreens(val route: String, val icon: Int) {
     object Profile : RoutesScreens("profile", R.drawable.baseline_person_24)
     object Login : RoutesScreens("login", 0)
     object AvailableProducts : RoutesScreens("available_products", 0)
+    object ProductInfo : RoutesScreens("product_info", 0)
 }
