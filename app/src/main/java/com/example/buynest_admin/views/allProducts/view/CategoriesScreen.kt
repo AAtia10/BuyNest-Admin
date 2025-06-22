@@ -4,6 +4,7 @@ package com.example.buynest.views.categories
 import com.example.buynest_admin.model.Product
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.buynest_admin.RoutesScreens
 import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
 import com.example.buynest_admin.repo.ProductRepository
@@ -56,14 +59,8 @@ import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModelFac
 
 
 @Composable
-fun AllProductsScreen() {
-    val viewModel: ProductViewModel = viewModel(
-        factory = ProductViewModelFactory(
-            ProductRepository.getInstance(
-                RemoteDataSourceImpl(ShopifyRetrofitBuilder.service)
-            )
-        )
-    )
+fun AllProductsScreen(navController: NavHostController,viewModel: ProductViewModel) {
+
 
     val products by viewModel.products.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -101,7 +98,10 @@ fun AllProductsScreen() {
             } else {
                 LazyColumn {
                     items(products) { product ->
-                        ProductCard(product)
+                        ProductCard(product) {
+                            viewModel.setSelectedProduct(product)
+                            navController.navigate(RoutesScreens.ProductInfo.route)
+                        }
                     }
                 }
             }
@@ -110,7 +110,7 @@ fun AllProductsScreen() {
 }
 
 @Composable
-fun ProductCard(product: Product) {
+fun ProductCard(product: Product, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(6.dp),
@@ -118,6 +118,7 @@ fun ProductCard(product: Product) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onClick() },
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             AsyncImage(

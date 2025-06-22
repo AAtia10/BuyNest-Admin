@@ -14,6 +14,7 @@ import com.example.buynest.views.profile.ProfileScreen
 import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
 import com.example.buynest_admin.repo.ProductRepository
+import com.example.buynest_admin.views.ProductInfo.ProductInfoScreen
 import com.example.buynest_admin.views.authentication.login.view.LoginScreen
 import com.example.buynest_admin.views.avaliableProducts.AvaliableProductsScreen
 import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
@@ -50,7 +51,7 @@ fun SetupNavHost(mainNavController: NavHostController) {
             OffersScreen()
         }
         composable(RoutesScreens.Categories.route) {
-            AllProductsScreen()
+            AllProductsScreen(mainNavController, sharedViewModel)
         }
         composable(RoutesScreens.Profile.route) {
             ProfileScreen()
@@ -61,6 +62,9 @@ fun SetupNavHost(mainNavController: NavHostController) {
         }
         composable(RoutesScreens.AvailableProducts.route) {
             AvaliableProductsScreen(sharedViewModel)
+        }
+        composable(RoutesScreens.ProductInfo.route) {
+            ProductInfoScreen(sharedViewModel)
         }
     }
 }

@@ -51,7 +51,9 @@ class MainActivity : ComponentActivity() {
         val hideBottomBarRoutes = listOf(
             RoutesScreens.Login.route,
             "splash",
-            RoutesScreens.AvailableProducts.route
+            RoutesScreens.AvailableProducts.route,
+            RoutesScreens.ProductInfo.route
+
         )
         
         val shouldHideBottomBar = currentRoute in hideBottomBarRoutes
