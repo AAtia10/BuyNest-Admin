@@ -10,6 +10,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,8 +20,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.ui.theme.MainColor
+import com.example.buynest_admin.ui.theme.red
 import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -30,7 +34,7 @@ import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun ProductInfoScreen(viewModel: ProductViewModel) {
+fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostController) {
     val product by viewModel.selectedProduct.collectAsState()
     if (product == null) return
 
@@ -52,6 +56,9 @@ fun ProductInfoScreen(viewModel: ProductViewModel) {
     val variant = product?.variants?.firstOrNull {
         it.option1 == selectedSize && it.option2 == selectedColor
     }
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
 
 
     var editedPrice by remember { mutableStateOf(variant?.price ?: "N/A") }
@@ -105,22 +112,41 @@ fun ProductInfoScreen(viewModel: ProductViewModel) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            HorizontalPager(
-                count = product!!.images.size,
-                state = pagerState,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(280.dp)
-            ) { page ->
-                ZoomableAsyncImage(
-                    model = product!!.images[page].src,
-                    contentDescription = null,
+            ) {
+                HorizontalPager(
+                    count = product!!.images.size,
+                    state = pagerState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
-                )
+                ) { page ->
+                    ZoomableAsyncImage(
+                        model = product!!.images[page].src,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                    )
+                }
+
+                IconButton(
+                    onClick = { showDeleteDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Product",
+                        tint = red
+                    )
+                }
             }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -298,6 +324,37 @@ fun ProductInfoScreen(viewModel: ProductViewModel) {
             }
         }
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Product") },
+            text = { Text("Are you sure you want to delete this product?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    coroutineScope.launch {
+                        viewModel.deleteProduct(product!!.id) {
+                            showDeleteDialog = false
+                            snackbarHostState.showSnackbar("🗑️ Product deleted successfully")
+                            navController.popBackStack()
+                            viewModel.clearSelectedProduct()
+                            viewModel.fetchProducts()
+                        }
+
+                    }
+                }) {
+                    Text("Delete", color = red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+
 }
 
 

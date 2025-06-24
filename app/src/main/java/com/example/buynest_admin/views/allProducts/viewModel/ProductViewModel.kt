@@ -231,7 +231,7 @@ class ProductViewModel(
         }
     }
 
-    fun deleteProduct(productId: Long, onDone: () -> Unit) {
+    fun deleteProduct(productId: Long, onDone:suspend  () -> Unit) {
         viewModelScope.launch {
             try {
                 repository.deleteProduct(productId).collect { success ->
@@ -243,6 +243,10 @@ class ProductViewModel(
                 Log.e("DELETE_ERROR", "Failed to delete: ${e.message}")
             }
         }
+    }
+
+    fun clearSelectedProduct() {
+        _selectedProduct.value = null
     }
 
 
