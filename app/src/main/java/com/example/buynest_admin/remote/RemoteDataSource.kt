@@ -1,5 +1,6 @@
 package com.example.buynest_admin.remote
 
+import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
@@ -29,5 +30,7 @@ interface RemoteDataSource {
 
     suspend fun addProduct(product: NewProductPost): Flow<Product>
     suspend fun deleteProduct(productId: Long): Flow<Boolean>
+    suspend fun getCollections(): Flow<List<CustomCollection>>
+
 
 }

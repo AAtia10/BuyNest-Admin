@@ -1,6 +1,7 @@
 package com.example.buynest_admin.remote
 
 import android.util.Log
+import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.InventoryLevelRequest
 import com.example.buynest_admin.model.Location
@@ -127,6 +128,19 @@ class RemoteDataSourceImpl(
         val response = service.deleteProduct(productId)
         emit(response.isSuccessful)
     }
+
+    override suspend fun getCollections(): Flow<List<CustomCollection>> = flow {
+        val response = service.getCollections()
+        if (response.isSuccessful) {
+            response.body()?.smart_collections?.let {
+                emit(it)
+            }
+        } else {
+            throw Exception("Failed to load smart collections")
+        }
+    }
+
+
 
 
 
