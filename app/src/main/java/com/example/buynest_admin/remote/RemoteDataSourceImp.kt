@@ -1,8 +1,15 @@
 package com.example.buynest_admin.remote
 
+import android.util.Log
 import com.example.buynest_admin.model.DiscountCode
+import com.example.buynest_admin.model.InventoryLevelRequest
+import com.example.buynest_admin.model.Location
+import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
+import com.example.buynest_admin.model.Variant
+import com.example.buynest_admin.model.VariantPost
+import com.example.buynest_admin.model.VariantRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -35,4 +42,96 @@ class RemoteDataSourceImpl(
             throw Exception("Failed to load discount codes")
         }
     }
+
+    override suspend fun addVariant(productId: Long, variant: VariantPost): Flow<Variant> = flow {
+        val response = service.addVariant(productId, VariantRequest(variant))
+        if (response.isSuccessful) {
+            emit(response.body()?.variant ?: error("No variant returned"))
+        } else {
+            throw Exception("Failed to post variant: ${response.code()}")
+        }
+    }
+
+    override suspend fun getProductById(id: Long): Flow<Product> = flow {
+        val response = service.getProductById(id)
+        if (response.isSuccessful) {
+            val product = response.body()?.products?.firstOrNull()
+            if (product != null) {
+                emit(product)
+            } else {
+                throw Exception("Product not found")
+            }
+        } else {
+            throw Exception("Failed to fetch product: ${response.code()}")
+        }
+    }
+
+    override suspend fun setInventoryLevel(
+        inventoryItemId: Long,
+        locationId: Long,
+        available: Int
+    ): Flow<Boolean> = flow {
+        val response = service.setInventoryLevel(
+            InventoryLevelRequest(
+                inventory_item_id = inventoryItemId,
+                location_id = locationId,
+                available = available
+            )
+        )
+        emit(response.isSuccessful)
+    }
+
+    override suspend fun getLocations(): Flow<List<Location>> = flow {
+        val response = service.getLocations()
+        if (response.isSuccessful) {
+            emit(response.body()?.locations ?: emptyList())
+        } else {
+            throw Exception("Failed to fetch locations: ${response.code()}")
+        }
+    }
+
+    override suspend fun updateVariant(
+        variantId: Long,
+        variant: VariantPost
+    ): Flow<Variant> = flow {
+        val response = service.updateVariant(variantId, VariantRequest(variant))
+        if (response.isSuccessful) {
+            emit(response.body()?.variant ?: error("No variant returned"))
+        } else {
+            throw Exception("Failed to update variant: ${response.code()}")
+        }
+    }
+
+    override suspend fun addProduct(product: NewProductPost): Flow<Product> = flow {
+        val response = service.addProduct(product)
+        Log.e("ADD_PRODUCT_ERROR", "Code: ${response.code()}")
+
+        if (!response.isSuccessful) {
+            val error = response.errorBody()?.string()
+            Log.e("ADD_PRODUCT_ERROR_BODY", error ?: "No error body")
+        }
+
+        if (response.isSuccessful) {
+            val addedProduct = response.body()?.product
+            if (addedProduct != null) {
+                emit(addedProduct)
+            } else {
+                throw IllegalStateException("No product returned")
+            }
+        } else {
+            throw Exception("Failed to add product: ${response.code()}")
+        }
+    }
+
+    override suspend fun deleteProduct(productId: Long): Flow<Boolean> = flow {
+        val response = service.deleteProduct(productId)
+        emit(response.isSuccessful)
+    }
+
+
+
+
+
+
+
 }
