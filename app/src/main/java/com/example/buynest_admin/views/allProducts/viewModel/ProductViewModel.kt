@@ -1,10 +1,15 @@
 package com.example.buynest_admin.views.allProducts.viewModel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.buynest_admin.model.Brand
+import com.example.buynest_admin.model.Location
+import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.Product
+import com.example.buynest_admin.model.Variant
+import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.repo.ProductRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +40,12 @@ class ProductViewModel(
     private val _selectedProduct = MutableStateFlow<Product?>(null)
     val selectedProduct: StateFlow<Product?> = _selectedProduct
 
+    private val _newVariantResult = MutableSharedFlow<Result<Variant>>()
+    val newVariantResult = _newVariantResult.asSharedFlow()
+
+    private val _locations = MutableStateFlow<List<Location>>(emptyList())
+    val locations: StateFlow<List<Location>> = _locations
+
     fun setSelectedProduct(product: Product) {
         _selectedProduct.value = product
     }
@@ -46,7 +57,7 @@ class ProductViewModel(
     }
 
 
-    private fun fetchProducts() {
+     fun fetchProducts() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -62,7 +73,7 @@ class ProductViewModel(
         }
     }
 
-    private fun handleSearch() {
+     fun handleSearch() {
         viewModelScope.launch {
             searchQuery.collect { query ->
                 repository.getProducts().collect { fullList ->
@@ -103,6 +114,138 @@ class ProductViewModel(
     fun setSelectedBrand(brand: String) {
         _selectedBrand.value = brand
     }
+
+
+    fun addVariant(productId: Long, variant: VariantPost, locationId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.postVariant(productId, variant).collect { createdVariant ->
+                    val inventoryItemId = createdVariant.inventory_item_id
+                    val quantity = variant.inventory_quantity
+
+                    repository.setInventoryLevel(
+                        inventoryItemId = inventoryItemId,
+                        locationId = locationId,
+                        available = quantity
+                    ).collect { success ->
+                        if (success) {
+                            _newVariantResult.emit(Result.success(createdVariant))
+                            fetchProductById(productId)
+                        } else {
+                            _newVariantResult.emit(Result.failure(Exception("Inventory update failed")))
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _newVariantResult.emit(Result.failure(e))
+            }
+        }
+    }
+
+
+
+
+    fun fetchProductById(productId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.getProductById(productId).collect {
+                    _selectedProduct.value = it
+                }
+            } catch (e: Exception) {
+
+            }
+        }
+    }
+
+    fun fetchLocations() {
+        viewModelScope.launch {
+            try {
+                repository.getLocations().collect {
+                    _locations.value = it
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun updateVariant(variantId: Long, variant: VariantPost) {
+        viewModelScope.launch {
+            try {
+                repository.updateVariant(variantId, variant).collect { updatedVariant ->
+                    fetchProductById(selectedProduct.value!!.id)
+
+                    val location = locations.value.firstOrNull()
+                    if (location != null) {
+                        repository.setInventoryLevel(
+                            inventoryItemId = updatedVariant.inventory_item_id,
+                            locationId = location.id,
+                            available = variant.inventory_quantity
+                        ).collect { success ->
+                            if (success) {
+                                _newVariantResult.emit(Result.success(updatedVariant))
+                            } else {
+                                _newVariantResult.emit(Result.failure(Exception("Inventory update failed")))
+                            }
+                        }
+                    } else {
+                        _newVariantResult.emit(Result.failure(Exception("No location selected")))
+                    }
+                }
+            } catch (e: Exception) {
+                _newVariantResult.emit(Result.failure(e))
+            }
+        }
+    }
+
+
+    fun addProductWithInventory(
+        product: NewProductPost,
+        locationId: Long,
+        variantInfo: VariantPost,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                repository.addProduct(product).collect { addedProduct ->
+                    val newVariant = addedProduct.variants.firstOrNull()
+                    if (newVariant != null) {
+                        repository.setInventoryLevel(
+                            inventoryItemId = newVariant.inventory_item_id,
+                            locationId = locationId,
+                            available = variantInfo.inventory_quantity
+                        ).collect {
+                            fetchProducts()
+                            onSuccess()
+                            Log.d("DEBUG_RESPONSE", addedProduct.toString())
+
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ViewModel", "Error adding product", e)
+            }
+        }
+    }
+
+    fun deleteProduct(productId: Long, onDone: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.deleteProduct(productId).collect { success ->
+                    if (success) {
+                        onDone()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DELETE_ERROR", "Failed to delete: ${e.message}")
+            }
+        }
+    }
+
+
+
+
+
+
 }
 
 class ProductViewModelFactory(

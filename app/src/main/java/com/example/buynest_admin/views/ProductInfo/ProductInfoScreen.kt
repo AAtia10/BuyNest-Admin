@@ -1,273 +1,360 @@
 package com.example.buynest_admin.views.ProductInfo
 
-
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
-
-
-
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun ProductInfoScreen(viewModel: ProductViewModel) {
-    val product = viewModel.selectedProduct.collectAsState().value ?: return
-    val sizes = product.options.firstOrNull { it.name.lowercase() == "size" }?.values ?: emptyList()
-    val colors = product.options.firstOrNull { it.name.lowercase() == "color" }?.values ?: emptyList()
-    val initialPrice = product.variants.firstOrNull()?.price ?: "N/A"
-    val availability = product.variants.firstOrNull()?.inventory_quantity ?: 0
-    val description = product.body_html
+    val product by viewModel.selectedProduct.collectAsState()
+    if (product == null) return
 
-    val scrollState = rememberScrollState()
-    var selectedSize by remember { mutableStateOf<String?>(null) }
-    var selectedColor by remember { mutableStateOf<String?>(null) }
+    val sizes = remember(product) {
+        product!!.options.firstOrNull { it.name.lowercase() == "size" }?.values ?: emptyList()
+    }
+    val colors = remember(product) {
+        product!!.options.firstOrNull { it.name.lowercase() == "color" }?.values ?: emptyList()
+    }
 
     val pagerState = rememberPagerState()
 
-    // Editing price
+    val defaultSize = sizes.firstOrNull()
+    val defaultColor = colors.firstOrNull()
+
+    var selectedSize by remember { mutableStateOf(defaultSize) }
+    var selectedColor by remember { mutableStateOf(defaultColor) }
+
+    val variant = product?.variants?.firstOrNull {
+        it.option1 == selectedSize && it.option2 == selectedColor
+    }
+
+
+    var editedPrice by remember { mutableStateOf(variant?.price ?: "N/A") }
+    var editedAvailability by remember { mutableStateOf(variant?.inventory_quantity?.toString() ?: "") }
     var isEditingPrice by remember { mutableStateOf(false) }
-    var editedPrice by remember { mutableStateOf(initialPrice) }
-    var currentPrice by remember { mutableStateOf(initialPrice) }
+    var isEditingAvailability by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val locationId by viewModel.locations.collectAsState()
+    val selectedLocationId = locationId.firstOrNull()?.id
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp)
-    ) {
 
-        HorizontalPager(
-            count = product.images.size,
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
-        ) { page ->
-            ZoomableAsyncImage(
-                model = product.images[page].src,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-            )
+    LaunchedEffect(selectedSize, selectedColor, product) {
+        val selectedVariant = product!!.variants.firstOrNull {
+            it.option1 == selectedSize && it.option2 == selectedColor
         }
+        editedPrice = selectedVariant?.price ?: ""
+        editedAvailability = selectedVariant?.inventory_quantity?.toString() ?: ""
+    }
 
-        Spacer(modifier = Modifier.height(8.dp))
+    LaunchedEffect(true) {
+        viewModel.fetchLocations()
+        viewModel.newVariantResult.collectLatest { result ->
+            result.onSuccess {
+                Log.d("ProductInfoScreen", "Variant added successfully")
+                snackbarHostState.showSnackbar("Product Saved successfully")
 
-        // -- Dots Indicator --
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+                viewModel.fetchProductById(product!!.id)
+
+
+            }.onFailure {
+                snackbarHostState.showSnackbar("Failed to add variant")
+            }
+        }
+    }
+
+    LaunchedEffect(product) {
+        selectedSize = product!!.options.firstOrNull { it.name.lowercase() == "size" }?.values?.firstOrNull()
+        selectedColor = product!!.options.firstOrNull { it.name.lowercase() == "color" }?.values?.firstOrNull()
+    }
+
+
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            repeat(product.images.size) { index ->
-                val isSelected = index == pagerState.currentPage
-                Box(
+            HorizontalPager(
+                count = product!!.images.size,
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+            ) { page ->
+                ZoomableAsyncImage(
+                    model = product!!.images[page].src,
+                    contentDescription = null,
                     modifier = Modifier
-                        .size(if (isSelected) 12.dp else 8.dp)
-                        .padding(4.dp)
-                        .clip(CircleShape)
-                        .background(if (isSelected) MainColor else Color.Gray)
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = product.title,
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(product!!.images.size) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(if (index == pagerState.currentPage) 12.dp else 8.dp)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(if (index == pagerState.currentPage) MainColor else Color.Gray)
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            Text(text = product!!.title, style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Size:", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "+ Add Variant",
-                color = MainColor,
-                modifier = Modifier.clickable {
-                    // TODO: Navigate to add variant screen or show dialog
-                }
+                text = product!!.body_html,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                color = Color.Gray
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.horizontalScroll(rememberScrollState())
-        ) {
-            sizes.forEach { size ->
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(if (selectedSize == size) MainColor.copy(alpha = 0.3f) else Color.Transparent)
-                        .border(
-                            2.dp,
-                            if (selectedSize == size) MainColor else Color.Gray,
-                            CircleShape
-                        )
-                        .clickable { selectedSize = size },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = size)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Size:", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "+ Add Variant",
+                    color = MainColor,
+                    modifier = Modifier.clickable { showDialog = true }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                sizes.forEach { size ->
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(if (selectedSize == size) MainColor.copy(alpha = 0.3f) else Color.Transparent)
+                            .border(2.dp, if (selectedSize == size) MainColor else Color.Gray, CircleShape)
+                            .clickable { selectedSize = size },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = size)
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Color:", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Color:", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.horizontalScroll(rememberScrollState())
-        ) {
-            colors.forEach { color ->
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (selectedColor == color) MainColor.copy(alpha = 0.2f) else Color.Transparent)
-                        .border(
-                            2.dp,
-                            if (selectedColor == color) MainColor else Color.Gray,
-                            RoundedCornerShape(20.dp)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .clickable { selectedColor = color }
-                ) {
-                    Text(text = color)
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                colors.forEach { color ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (selectedColor == color) MainColor.copy(alpha = 0.2f) else Color.Transparent)
+                            .border(2.dp, if (selectedColor == color) MainColor else Color.Gray, RoundedCornerShape(20.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .clickable { selectedColor = color }
+                    ) {
+                        Text(text = color)
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isEditingPrice) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.OutlinedTextField(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isEditingPrice) {
+                    OutlinedTextField(
                         value = editedPrice,
                         onValueChange = { editedPrice = it },
+                        label = { Text("Price") },
                         singleLine = true,
-                        modifier = Modifier.width(140.dp)
+                        modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    Text("✔", fontSize = 20.sp, color = MainColor, modifier = Modifier.clickable {
+                        isEditingPrice = false
+                    })
+                } else {
                     Text(
-                        text = "✔",
-                        fontSize = 20.sp,
-                        color = MainColor,
-                        modifier = Modifier.clickable {
-                            currentPrice = editedPrice
-                            isEditingPrice = false
-                        }
-                    )
-                }
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Price: $currentPrice EGP",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                        text = if (editedPrice.isNotBlank()) "Price: $editedPrice EGP" else "Price: N/A", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "✏️",
-                        fontSize = 18.sp,
-                        modifier = Modifier.clickable {
-                            isEditingPrice = true
-                        }
-                    )
+                    Text("✏️", fontSize = 18.sp, modifier = Modifier.clickable { isEditingPrice = true })
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = "Availability: $availability in stock",
-            style = MaterialTheme.typography.bodyMedium
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isEditingAvailability) {
+                    OutlinedTextField(
+                        value = editedAvailability,
+                        onValueChange = { editedAvailability = it },
+                        label = { Text("Availability") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("✔", fontSize = 20.sp, color = MainColor, modifier = Modifier.clickable {
+                        isEditingAvailability = false
+                    })
+                } else {
+                    Text(
+                        text = if (editedAvailability.isNotBlank()) {
+                            "Availability: $editedAvailability in stock"
+                        } else {
+                            "Availability: N/A"
+                        }, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("✏️", fontSize = 18.sp, modifier = Modifier.clickable { isEditingAvailability = true })
+                }
+            }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = "Description:", style = MaterialTheme.typography.titleMedium)
-        Text(text = description)
+            Button(
+                onClick = {
+                    if (selectedSize != null && selectedColor != null && variant != null) {
+                        coroutineScope.launch {
+                            viewModel.updateVariant(
+                                variantId = variant!!.id,
+                                variant = VariantPost(
+                                    option1 = selectedSize!!,
+                                    option2 = selectedColor!!,
+                                    price = editedPrice,
+                                    inventory_quantity = editedAvailability.toIntOrNull() ?: 0
+                                )
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MainColor)
+            ) {
+                Text(text = "Save Product", color = Color.White)
+            }
 
-        Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
-            onClick = {
-                // TODO: Save product changes
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MainColor)
-        ) {
-            Text(text = "Save Product", color = Color.White)
+            if (showDialog) {
+                AddVariantDialog(
+                    onDismiss = { showDialog = false },
+                    onSubmit = {
+                        if (selectedLocationId != null) {
+                            viewModel.addVariant(product!!.id, it, selectedLocationId)
+                        }
+                        showDialog = false
+                    }
+                )
+            }
         }
     }
 }
 
 
+@Composable
+fun AddVariantDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (VariantPost) -> Unit
+) {
+    var size by remember { mutableStateOf("") }
+    var color by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
+    var quantity by remember { mutableStateOf("") }
 
-
-
-
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = {
+                onSubmit(
+                    VariantPost(
+                        option1 = size,
+                        option2 = color,
+                        price = price,
+                        inventory_quantity = quantity.toIntOrNull() ?: 0
+                    )
+                )
+            },
+                colors = ButtonDefaults.buttonColors(containerColor = MainColor))
+            { Text("Done") }
+        },
+        title = { Text("Add Variant") },
+        text = {
+            Column {
+                OutlinedTextField(value = size, onValueChange = { size = it }, label = { Text("Size") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MainColor,
+                        unfocusedBorderColor = MainColor
+                    )
+                    )
+                OutlinedTextField(value = color, onValueChange = { color = it }, label = { Text("Color") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MainColor,
+                        unfocusedBorderColor = MainColor
+                    )
+                    )
+                OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Price") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MainColor,
+                        unfocusedBorderColor = MainColor
+                    )
+                    )
+                OutlinedTextField(value = quantity, onValueChange = { quantity = it }, label = { Text("Quantity") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MainColor,
+                        unfocusedBorderColor = MainColor
+                    )
+                    )
+            }
+        }
+    )
+}
