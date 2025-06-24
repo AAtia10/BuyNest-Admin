@@ -1,6 +1,8 @@
 package com.example.buynest_admin.repo
 
+import android.util.Log
 import com.example.buynest_admin.model.Brand
+import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRule
@@ -10,6 +12,7 @@ import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.model.getBrandLogo
 import com.example.buynest_admin.remote.RemoteDataSource
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class ProductRepository(
@@ -42,14 +45,43 @@ class ProductRepository(
 
 
     suspend fun getBrands(): Flow<List<Brand>> {
-        return remoteDataSource.getProducts()
-            .map { productList ->
-                productList.map { it.vendor }.distinct()
-                    .map { vendor ->
-                        Brand(name = vendor, logoRes = getBrandLogo(vendor))
-                    }
+        val productsFlow = remoteDataSource.getProducts()
+        val collectionsFlow = remoteDataSource.getCollections()
+
+        return combine(productsFlow, collectionsFlow) { products, collections ->
+            val vendors = products.map { it.vendor }.distinct()
+
+            vendors.mapNotNull { vendor ->
+                val matchingCollection = collections.find {
+                    normalize(it.title) == normalize(vendor)
+                }
+
+                Log.d("BrandDebug", "Vendors: ${vendors.joinToString()}")
+
+                collections.forEach {
+                    Log.d("BrandDebug", "Smart Collection: title=${it.title}, image=${it.image?.src}")
+                }
+
+
+                matchingCollection?.let {
+                    Log.d("BrandMatch", "Vendor: $vendor matched with ${it.title}")
+
+
+                    Brand(
+                        name = vendor,
+                        logoUrl = it.image?.src ?: ""
+                    )
+                }
+
             }
+        }
     }
+
+    fun normalize(text: String): String {
+        return text.trim().lowercase().replace(" ", "")
+    }
+
+
 
     suspend fun postVariant(productId: Long, variant: VariantPost): Flow<Variant> =
         remoteDataSource.addVariant(productId, variant)
@@ -75,6 +107,11 @@ class ProductRepository(
     suspend fun deleteProduct(productId: Long): Flow<Boolean> {
         return remoteDataSource.deleteProduct(productId)
     }
+
+    suspend fun getCollections(): Flow<List<CustomCollection>> {
+        return remoteDataSource.getCollections()
+    }
+
 
 
 

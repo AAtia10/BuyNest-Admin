@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.buynest_admin.model.Brand
+import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.Product
@@ -29,6 +30,9 @@ class ProductViewModel(
 
     private val _brands = MutableStateFlow<List<Brand>>(emptyList())
     val brands: StateFlow<List<Brand>> = _brands
+
+    private val _collections = MutableStateFlow<List<CustomCollection>>(emptyList())
+    val collections: StateFlow<List<CustomCollection>> = _collections
 
 
     private val _searchQuery = MutableSharedFlow<String>(replay = 1)
@@ -240,10 +244,6 @@ class ProductViewModel(
             }
         }
     }
-
-
-
-
 
 
 }

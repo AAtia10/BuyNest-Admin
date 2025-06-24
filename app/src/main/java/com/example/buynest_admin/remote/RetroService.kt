@@ -1,6 +1,7 @@
 package com.example.buynest_admin.remote
 
 import com.example.buynest_admin.model.AddProductResponse
+import com.example.buynest_admin.model.CollectionsResponse
 import com.example.buynest_admin.model.DiscountCodesResponse
 import com.example.buynest_admin.model.InventoryLevelRequest
 import com.example.buynest_admin.model.LocationResponse
@@ -62,6 +63,11 @@ interface ShopifyService {
     suspend fun deleteProduct(
         @Path("product_id") productId: Long
     ): Response<Unit>
+
+    @GET("admin/api/2024-04/smart_collections.json")
+    suspend fun getCollections(): Response<CollectionsResponse>
+
+
 
 
 

@@ -42,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.buynest_admin.RoutesScreens
 
 import com.example.buynest_admin.model.Brand
@@ -101,7 +102,7 @@ fun HomeScreen(navController: NavHostController,viewModel: ProductViewModel)  {
 }
 
 @Composable
-fun BrandCard(brand: Brand,onClick: () -> Unit) {
+fun BrandCard(brand: Brand, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -118,11 +119,11 @@ fun BrandCard(brand: Brand,onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Image(
-                painter = painterResource(id = brand.logoRes),
+            AsyncImage(
+                model = brand.logoUrl,
                 contentDescription = brand.name,
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(120.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Fit
             )
