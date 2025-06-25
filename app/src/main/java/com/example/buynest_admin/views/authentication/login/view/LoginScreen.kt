@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import com.example.buynest_admin.views.authentication.login.viewmodel.LoginViewM
 fun LoginScreen(mainNavController: NavHostController, viewModel: LoginViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val passwordVisible = remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     val email = viewModel.email
     val password = viewModel.password
@@ -129,7 +131,7 @@ fun LoginScreen(mainNavController: NavHostController, viewModel: LoginViewModel 
 
             Button(
                 onClick = {
-                    viewModel.onLoginClick()
+                    viewModel.onLoginClick(context)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

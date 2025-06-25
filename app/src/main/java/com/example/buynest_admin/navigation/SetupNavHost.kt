@@ -37,11 +37,7 @@ fun SetupNavHost(mainNavController: NavHostController) {
         startDestination = "splash"
     ) {
         composable("splash") {
-            SplashScreen {
-                mainNavController.navigate(RoutesScreens.Login.route) {
-                    popUpTo("splash") { inclusive = true }
-                }
-            }
+            SplashScreen(mainNavController)
         }
         composable(RoutesScreens.Login.route) {
             LoginScreen(mainNavController)
@@ -54,7 +50,7 @@ fun SetupNavHost(mainNavController: NavHostController) {
             AllProductsScreen(mainNavController, sharedViewModel)
         }
         composable(RoutesScreens.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(mainNavController)
         }
 
         composable(RoutesScreens.Home.route) {
