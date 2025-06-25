@@ -24,7 +24,7 @@ import androidx.navigation.NavHostController
 import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.ui.theme.red
-import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
+import com.example.buynest_admin.viewModels.ProductViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -34,7 +34,7 @@ import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostController) {
+fun ProductInfoScreen(viewModel: ProductViewModel, navController: NavHostController) {
     val product by viewModel.selectedProduct.collectAsState()
     if (product == null) return
 
@@ -49,6 +49,9 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
 
     val defaultSize = sizes.firstOrNull()
     val defaultColor = colors.firstOrNull()
+
+    var showDeleteVariantDialog by remember { mutableStateOf(false) }
+
 
     var selectedSize by remember { mutableStateOf(defaultSize) }
     var selectedColor by remember { mutableStateOf(defaultColor) }
@@ -91,13 +94,13 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
         viewModel.newVariantResult.collectLatest { result ->
             result.onSuccess {
                 Log.d("ProductInfoScreen", "Variant added successfully")
-                snackbarHostState.showSnackbar("Product Saved successfully")
+                snackbarHostState.showSnackbar("✅ Product Saved successfully")
 
                 viewModel.fetchProductById(product!!.id)
 
 
             }.onFailure {
-                snackbarHostState.showSnackbar("Product Saved successfully")
+                snackbarHostState.showSnackbar("✅ Product Saved successfully")
             }
         }
     }
@@ -147,6 +150,8 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
+                        .background(Color.White, shape = CircleShape)
+                        .clip(CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -154,6 +159,7 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
                         tint = red
                     )
                 }
+
             }
 
 
@@ -368,6 +374,60 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
                 Text(text = "Save Product", color = Color.White)
             }
 
+            if (variant != null) {
+                Button(
+                    onClick = {
+                        showDeleteVariantDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = red)
+                ) {
+                    Text("Delete Variant", color = Color.White)
+                }
+            }
+
+            if (showDeleteVariantDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteVariantDialog = false },
+                    title = { Text("Delete Variant") },
+                    text = { Text("Are you sure you want to delete this variant?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showDeleteVariantDialog = false
+                                coroutineScope.launch {
+                                    viewModel.deleteVariant(
+                                        productId = product!!.id,
+                                        variantId = variant!!.id,
+                                        onSuccess = {
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("✅ Variant deleted successfully")
+                                            }
+                                            viewModel.fetchProductById(product!!.id)
+                                        },
+                                        onError = {
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar("❌ Failed to delete variant")
+                                            }
+                                        }
+                                    )
+                                }
+                            },colors = ButtonDefaults.buttonColors(containerColor = red)
+                        ) {
+                            Text("Delete")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteVariantDialog = false },colors = ButtonDefaults.buttonColors(containerColor = MainColor) ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+
+
+
 
 
             if (showDialog) {
@@ -390,7 +450,7 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
             title = { Text("Delete Product") },
             text = { Text("Are you sure you want to delete this product?") },
             confirmButton = {
-                TextButton(onClick = {
+                Button(onClick = {
                     coroutineScope.launch {
                         viewModel.deleteProduct(product!!.id) {
                             showDeleteDialog = false
@@ -401,12 +461,13 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
                         }
 
                     }
-                }) {
-                    Text("Delete", color = red)
+                }, colors = ButtonDefaults.buttonColors(containerColor = red) )
+                {
+                    Text("Delete")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(onClick = { showDeleteDialog = false },colors = ButtonDefaults.buttonColors(containerColor = MainColor) ) {
                     Text("Cancel")
                 }
             }

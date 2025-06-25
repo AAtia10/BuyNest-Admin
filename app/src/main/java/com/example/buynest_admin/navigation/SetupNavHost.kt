@@ -17,8 +17,8 @@ import com.example.buynest_admin.repo.ProductRepository
 import com.example.buynest_admin.views.ProductInfo.ProductInfoScreen
 import com.example.buynest_admin.views.authentication.login.view.LoginScreen
 import com.example.buynest_admin.views.avaliableProducts.AvaliableProductsScreen
-import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
-import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModelFactory
+import com.example.buynest_admin.viewModels.ProductViewModel
+import com.example.buynest_admin.viewModels.ProductViewModelFactory
 import com.example.buynest_admin.views.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)

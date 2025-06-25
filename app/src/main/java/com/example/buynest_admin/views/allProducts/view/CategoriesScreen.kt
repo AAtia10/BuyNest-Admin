@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,7 +44,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -80,7 +78,7 @@ import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.ui.theme.red
 import com.example.buynest_admin.ui.theme.white
-import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
+import com.example.buynest_admin.viewModels.ProductViewModel
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 

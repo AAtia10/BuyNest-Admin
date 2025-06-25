@@ -38,5 +38,13 @@ interface RemoteDataSource {
         newDesc: String
     ): Flow<Product>
 
+    suspend fun deleteVariant(productId: Long, variantId: Long): Flow<Boolean>
+
+    suspend fun connectInventoryLevel(
+        inventoryItemId: Long,
+        locationId: Long
+    ): Flow<Boolean>
+
+
 
 }

@@ -1,7 +1,6 @@
 package com.example.buynest_admin.views.authentication.login.view
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +36,7 @@ import com.example.buynest_admin.R
 import com.example.buynest_admin.RoutesScreens
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.ui.theme.white
-import com.example.buynest_admin.views.authentication.login.viewmodel.LoginViewModel
+import com.example.buynest_admin.viewModels.LoginViewModel
 
 @Composable
 fun LoginScreen(mainNavController: NavHostController, viewModel: LoginViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {

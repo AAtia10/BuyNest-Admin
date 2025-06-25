@@ -114,6 +114,16 @@ class ProductRepository(
         return remoteDataSource.updateProduct(productId, newTitle, newDesc)
     }
 
+    suspend fun deleteVariant(productId: Long, variantId: Long): Flow<Boolean> {
+        return remoteDataSource.deleteVariant(productId, variantId)
+    }
+
+    suspend fun connectInventoryLevel(inventoryItemId: Long, locationId: Long): Flow<Boolean> {
+        return remoteDataSource.connectInventoryLevel(inventoryItemId, locationId)
+    }
+
+
+
 
 
 
