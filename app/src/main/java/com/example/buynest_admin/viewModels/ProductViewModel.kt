@@ -1,4 +1,4 @@
-package com.example.buynest_admin.views.allProducts.viewModel
+package com.example.buynest_admin.viewModels
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -32,7 +32,6 @@ class ProductViewModel(
     val brands: StateFlow<List<Brand>> = _brands
 
     private val _collections = MutableStateFlow<List<CustomCollection>>(emptyList())
-    val collections: StateFlow<List<CustomCollection>> = _collections
 
 
     private val _searchQuery = MutableSharedFlow<String>(replay = 1)
@@ -179,7 +178,22 @@ class ProductViewModel(
                     fetchProductById(selectedProduct.value!!.id)
 
                     val location = locations.value.firstOrNull()
+
+                    Log.d("UPDATE_VARIANT", """
+                    variantId=${variantId}
+                    inventory_item_id=${updatedVariant.inventory_item_id}
+                    quantity=${variant.inventory_quantity}
+                    location=${location?.id}
+                """.trimIndent())
+
                     if (location != null) {
+
+                        repository.connectInventoryLevel(
+                            inventoryItemId = updatedVariant.inventory_item_id,
+                            locationId = location.id
+                        ).collect {
+                            Log.d("CONNECT_RESPONSE", "connected=$it")
+                        }
                         repository.setInventoryLevel(
                             inventoryItemId = updatedVariant.inventory_item_id,
                             locationId = location.id,
@@ -262,6 +276,20 @@ class ProductViewModel(
             }
         }
     }
+
+    fun deleteVariant(productId: Long, variantId: Long, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.deleteVariant(productId, variantId).collect { success ->
+                    if (success) onSuccess()
+                    else onError(Exception("Delete failed"))
+                }
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
+    }
+
 
 
 

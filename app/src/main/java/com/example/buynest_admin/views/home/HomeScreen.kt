@@ -1,6 +1,5 @@
 package com.example.buynest.views.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -47,7 +45,7 @@ import com.example.buynest_admin.RoutesScreens
 
 import com.example.buynest_admin.model.Brand
 import com.example.buynest_admin.ui.theme.MainColor
-import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
+import com.example.buynest_admin.viewModels.ProductViewModel
 
 
 @Composable

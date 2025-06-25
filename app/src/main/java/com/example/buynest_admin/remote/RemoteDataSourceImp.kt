@@ -74,6 +74,7 @@ class RemoteDataSourceImpl(
         locationId: Long,
         available: Int
     ): Flow<Boolean> = flow {
+        Log.d("SET_INVENTORY", "Sending => itemId=$inventoryItemId, location=$locationId, quantity=$available")
         val response = service.setInventoryLevel(
             InventoryLevelRequest(
                 inventory_item_id = inventoryItemId,
@@ -81,6 +82,7 @@ class RemoteDataSourceImpl(
                 available = available
             )
         )
+        Log.d("SET_INVENTORY", "Response => success=${response.isSuccessful}, code=${response.code()}")
         emit(response.isSuccessful)
     }
 
@@ -172,8 +174,31 @@ class RemoteDataSourceImpl(
     }
 
 
+    override suspend fun deleteVariant(productId: Long, variantId: Long): Flow<Boolean> = flow {
+        val response = service.deleteVariant(productId, variantId)
+        emit(response.isSuccessful)
+    }
 
 
+
+
+
+
+
+
+    override suspend fun connectInventoryLevel(
+        inventoryItemId: Long,
+        locationId: Long
+    ): Flow<Boolean> = flow {
+        val response = service.connectInventoryLevel(
+            mapOf(
+                "inventory_item_id" to inventoryItemId,
+                "location_id" to locationId
+            )
+        )
+        Log.d("CONNECT_RESPONSE", "status=${response.code()}, success=${response.isSuccessful}")
+        emit(response.isSuccessful)
+    }
 
 
 

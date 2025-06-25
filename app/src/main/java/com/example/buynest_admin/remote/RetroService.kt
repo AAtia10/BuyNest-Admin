@@ -75,6 +75,20 @@ interface ShopifyService {
         @Body product: UpdateProductWrapper
     ): Response<AddProductResponse>
 
+    @DELETE("admin/api/2024-04/products/{product_id}/variants/{variant_id}.json")
+    suspend fun deleteVariant(
+        @Path("product_id") productId: Long,
+        @Path("variant_id") variantId: Long
+    ): Response<Unit>
+
+
+    @POST("inventory_levels/connect.json")
+    suspend fun connectInventoryLevel(
+        @Body body: Map<String, Long>
+    ): Response<Unit>
+
+
+
 
 
 

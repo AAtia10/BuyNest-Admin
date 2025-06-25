@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.repo.ProductRepository
-import com.example.buynest_admin.views.allProducts.viewModel.ProductViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

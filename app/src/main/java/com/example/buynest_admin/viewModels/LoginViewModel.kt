@@ -1,4 +1,4 @@
-package com.example.buynest_admin.views.authentication.login.viewmodel
+package com.example.buynest_admin.viewModels
 
 
 import android.content.Context
