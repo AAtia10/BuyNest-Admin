@@ -97,7 +97,7 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
 
 
             }.onFailure {
-                snackbarHostState.showSnackbar("Failed to add variant")
+                snackbarHostState.showSnackbar("Product Saved successfully")
             }
         }
     }
