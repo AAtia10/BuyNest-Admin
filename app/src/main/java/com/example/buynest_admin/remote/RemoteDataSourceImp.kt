@@ -8,6 +8,8 @@ import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
+import com.example.buynest_admin.model.UpdateProductBody
+import com.example.buynest_admin.model.UpdateProductWrapper
 import com.example.buynest_admin.model.Variant
 import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.model.VariantRequest
@@ -139,6 +141,37 @@ class RemoteDataSourceImpl(
             throw Exception("Failed to load smart collections")
         }
     }
+
+    override suspend fun updateProduct(
+        productId: Long,
+        newTitle: String,
+        newDesc: String
+    ): Flow<Product> = flow {
+        val body = UpdateProductWrapper(
+            product = UpdateProductBody(
+                id = productId,
+                title = newTitle,
+                body_html = newDesc
+            )
+        )
+
+        Log.d("UpdateProduct", "Request body = $body")
+
+        val response = service.updateProduct(productId, body)
+
+        if (response.isSuccessful) {
+            val updatedProduct = response.body()?.product
+            if (updatedProduct != null) {
+                emit(updatedProduct)
+            } else {
+                throw Exception("No product returned")
+            }
+        } else {
+            throw Exception("Failed to update product: ${response.code()}")
+        }
+    }
+
+
 
 
 
