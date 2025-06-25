@@ -8,6 +8,7 @@ import com.example.buynest_admin.model.LocationResponse
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRulesResponse
 import com.example.buynest_admin.model.ProductsResponse
+import com.example.buynest_admin.model.UpdateProductWrapper
 import com.example.buynest_admin.model.VariantRequest
 import com.example.buynest_admin.model.VariantWrapper
 import retrofit2.Response
@@ -66,6 +67,15 @@ interface ShopifyService {
 
     @GET("admin/api/2024-04/smart_collections.json")
     suspend fun getCollections(): Response<CollectionsResponse>
+
+
+    @PUT("admin/api/2024-04/products/{product_id}.json")
+    suspend fun updateProduct(
+        @Path("product_id") productId: Long,
+        @Body product: UpdateProductWrapper
+    ): Response<AddProductResponse>
+
+
 
 
 

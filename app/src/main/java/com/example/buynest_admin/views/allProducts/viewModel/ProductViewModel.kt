@@ -249,6 +249,21 @@ class ProductViewModel(
         _selectedProduct.value = null
     }
 
+    fun updateProductTitleAndDescription(productId: Long, newTitle: String, newDesc: String) {
+        viewModelScope.launch {
+            Log.d("UpdateProduct", "Title: $newTitle, Desc: $newDesc")
+
+            try {
+                repository.updateProduct(productId, newTitle, newDesc).collect {
+                    fetchProductById(productId)
+                }
+            } catch (e: Exception) {
+                Log.e("UpdateProduct", "Failed to update product", e)
+            }
+        }
+    }
+
+
 
 }
 

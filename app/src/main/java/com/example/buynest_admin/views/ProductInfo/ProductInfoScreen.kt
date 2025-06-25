@@ -71,6 +71,12 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
     val locationId by viewModel.locations.collectAsState()
     val selectedLocationId = locationId.firstOrNull()?.id
 
+    var isEditingTitle by remember { mutableStateOf(false) }
+    var isEditingDesc by remember { mutableStateOf(false) }
+    var editedTitle by remember { mutableStateOf(product!!.title) }
+    var editedDesc by remember { mutableStateOf(product!!.body_html) }
+
+
 
     LaunchedEffect(selectedSize, selectedColor, product) {
         val selectedVariant = product!!.variants.firstOrNull {
@@ -99,6 +105,9 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
     LaunchedEffect(product) {
         selectedSize = product!!.options.firstOrNull { it.name.lowercase() == "size" }?.values?.firstOrNull()
         selectedColor = product!!.options.firstOrNull { it.name.lowercase() == "color" }?.values?.firstOrNull()
+
+        editedTitle = product!!.title
+        editedDesc = product!!.body_html
     }
 
 
@@ -167,15 +176,59 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(text = product!!.title, style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp))
+            // Title row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isEditingTitle) {
+                    OutlinedTextField(
+                        value = editedTitle,
+                        onValueChange = { editedTitle = it },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("✔", modifier = Modifier
+                        .clickable {
+                            isEditingTitle = false
+                        }
+                        .padding(start = 8.dp),
+                        color = MainColor
+                    )
+                } else {
+                    Text(
+                        text = editedTitle,
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("✏️", modifier = Modifier.clickable { isEditingTitle = true }.padding(start = 8.dp))
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = product!!.body_html,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                color = Color.Gray
-            )
+// Description row
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isEditingDesc) {
+                    OutlinedTextField(
+                        value = editedDesc,
+                        onValueChange = { editedDesc = it },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("✔", modifier = Modifier
+                        .clickable {
+                            isEditingDesc = false
+                        }
+                        .padding(start = 8.dp),
+                        color = MainColor
+                    )
+                } else {
+                    Text(
+                        text = editedDesc,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                        color = Color.Gray,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("✏️", modifier = Modifier.clickable { isEditingDesc = true }.padding(start = 8.dp))
+                }
+            }
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -301,6 +354,11 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
                                     inventory_quantity = editedAvailability.toIntOrNull() ?: 0
                                 )
                             )
+
+                            viewModel.updateProductTitleAndDescription(product!!.id, editedTitle, editedDesc)
+                            viewModel.fetchProductById(product!!.id)
+                            isEditingTitle = false
+                            isEditingDesc = false
                         }
                     }
                 },
@@ -309,6 +367,7 @@ fun ProductInfoScreen(viewModel: ProductViewModel,navController: NavHostControll
             ) {
                 Text(text = "Save Product", color = Color.White)
             }
+
 
 
             if (showDialog) {

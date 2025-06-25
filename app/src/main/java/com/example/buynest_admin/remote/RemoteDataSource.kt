@@ -32,5 +32,11 @@ interface RemoteDataSource {
     suspend fun deleteProduct(productId: Long): Flow<Boolean>
     suspend fun getCollections(): Flow<List<CustomCollection>>
 
+    suspend fun updateProduct(
+        productId: Long,
+        newTitle: String,
+        newDesc: String
+    ): Flow<Product>
+
 
 }

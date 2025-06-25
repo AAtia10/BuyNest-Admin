@@ -108,9 +108,12 @@ class ProductRepository(
         return remoteDataSource.deleteProduct(productId)
     }
 
-    suspend fun getCollections(): Flow<List<CustomCollection>> {
-        return remoteDataSource.getCollections()
+
+
+    suspend fun updateProduct(productId: Long, newTitle: String, newDesc: String): Flow<Product> {
+        return remoteDataSource.updateProduct(productId, newTitle, newDesc)
     }
+
 
 
 
