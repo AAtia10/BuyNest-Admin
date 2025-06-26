@@ -4,6 +4,7 @@ import com.example.buynest_admin.model.AddPriceRuleResponse
 import com.example.buynest_admin.model.AddPriceRuleWrapper
 import com.example.buynest_admin.model.AddProductResponse
 import com.example.buynest_admin.model.CollectionsResponse
+import com.example.buynest_admin.model.DiscountCodePostWrapper
 import com.example.buynest_admin.model.DiscountCodesResponse
 import com.example.buynest_admin.model.InventoryLevelRequest
 import com.example.buynest_admin.model.LocationResponse
@@ -98,6 +99,13 @@ interface ShopifyService {
     suspend fun deletePriceRule(
         @Path("id") id: Long
     ): Response<Unit>
+
+    @POST("admin/api/2024-04/price_rules/{price_rule_id}/discount_codes.json")
+    suspend fun addDiscountCode(
+        @Path("price_rule_id") priceRuleId: Long,
+        @Body body: DiscountCodePostWrapper
+    ): Response<DiscountCodesResponse>
+
 
 
 

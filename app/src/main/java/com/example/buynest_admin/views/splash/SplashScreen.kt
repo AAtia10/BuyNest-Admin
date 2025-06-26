@@ -36,7 +36,7 @@ fun SplashScreen(navController: NavHostController) {
     val sharedPref = remember { SharedPreferenceManager.getInstance(context) }
 
     LaunchedEffect(Unit) {
-        delay(5000)
+        delay(3000)
         if (sharedPref.isLoggedIn()) {
             navController.navigate(RoutesScreens.Home.route) {
                 popUpTo(0) { inclusive = true }

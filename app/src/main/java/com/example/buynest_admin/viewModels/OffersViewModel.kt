@@ -29,7 +29,7 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
             try {
                 repository.getPriceRules().collect {
                     _priceRules.value = it
-                    fetchDiscountCodesForPriceRules(it)
+
                 }
             } catch (_: Exception) {
             } finally {
@@ -39,21 +39,7 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
     }
 
 
-    fun fetchDiscountCodesForPriceRules(rules: List<PriceRule>) {
-        viewModelScope.launch {
-            val map = mutableMapOf<Long, DiscountCode>()
-            for (rule in rules) {
-                try {
-                    repository.getDiscountCodes(rule.id).collect { codes ->
-                        if (codes.isNotEmpty()) {
-                            map[rule.id] = codes.first()
-                        }
-                    }
-                } catch (_: Exception) {}
-            }
-            _discountMap.value = map
-        }
-    }
+
 
 
     fun addPriceRule(newRule: AddPriceRulePost, onComplete: () -> Unit = {}) {
@@ -87,6 +73,35 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
             }
         }
     }
+
+    fun fetchSingleDiscountCode(
+        ruleId: Long,
+        onResult: (DiscountCode?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                repository.getDiscountCodes(ruleId).collect { codes ->
+                    onResult(codes.firstOrNull())
+                }
+            } catch (e: Exception) {
+                onResult(null)
+            }
+        }
+    }
+
+    fun addDiscountCode(priceRuleId: Long, code: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.addDiscountCode(priceRuleId, code).collect {
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                Log.e("AddDiscountCode", "Error: ${e.message}")
+            }
+        }
+    }
+
+
 
 
 }
