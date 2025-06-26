@@ -106,6 +106,15 @@ interface ShopifyService {
         @Body body: DiscountCodePostWrapper
     ): Response<DiscountCodesResponse>
 
+    @DELETE("admin/api/2024-04/price_rules/{price_rule_id}/discount_codes/{discount_code_id}.json")
+    suspend fun deleteDiscountCode(
+        @Path("price_rule_id") priceRuleId: Long,
+        @Path("discount_code_id") discountCodeId: Long
+    ): Response<Unit>
+
+
+
+
 
 
 

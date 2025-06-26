@@ -230,6 +230,17 @@ class RemoteDataSourceImpl(
         else throw Exception("Failed to add code")
     }
 
+    override suspend fun deleteDiscountCode(priceRuleId: Long, codeId: Long): Flow<Unit> = flow {
+        val response = service.deleteDiscountCode(priceRuleId, codeId)
+        if (response.isSuccessful) {
+            emit(Unit)
+        } else {
+            throw Exception("Delete failed: ${response.code()} - ${response.errorBody()?.string()}")
+        }
+    }
+
+
+
 
 
 
