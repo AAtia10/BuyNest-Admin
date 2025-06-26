@@ -102,6 +102,23 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
     }
 
 
+    fun deleteDiscountCode(priceRuleId: Long, codeId: Long, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                Log.d("DELETE", "Trying to delete code $codeId from price rule $priceRuleId")
+                repository.deleteDiscountCode(priceRuleId, codeId).collect {
+                    Log.d("DELETE", "Deleted successfully from API")
+                }
+
+            } catch (e: Exception) {
+                Log.e("DELETE_ERROR", e.message ?: "Unknown error")
+            }
+            onComplete()
+        }
+    }
+
+
+
 
 
 }
