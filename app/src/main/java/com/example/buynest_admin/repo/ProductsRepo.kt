@@ -133,6 +133,9 @@ class ProductRepository(
         return remoteDataSource.deletePriceRule(id)
     }
 
+    suspend fun addDiscountCode(priceRuleId: Long, code: String): Flow<Unit> = remoteDataSource.addDiscountCode(priceRuleId, code)
+
+
 
 
 

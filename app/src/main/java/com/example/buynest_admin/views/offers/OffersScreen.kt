@@ -60,13 +60,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.DiscountCode
-import com.example.buynest_admin.model.PrerequisiteSubtotalRange
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
@@ -283,7 +281,7 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clickable {
-                navController.navigate("discount_details/${discountCode?.code}/${discountCode?.usage_count}")
+                navController.navigate("discount_details/${rule.id}")
             },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),

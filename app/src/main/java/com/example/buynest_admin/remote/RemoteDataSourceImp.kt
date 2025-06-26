@@ -5,6 +5,8 @@ import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.AddPriceRuleWrapper
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
+import com.example.buynest_admin.model.DiscountCodePost
+import com.example.buynest_admin.model.DiscountCodePostWrapper
 import com.example.buynest_admin.model.InventoryLevelRequest
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
@@ -217,6 +219,17 @@ class RemoteDataSourceImpl(
             throw Exception("Failed to delete price rule: ${response.code()}")
         }
     }
+
+    override suspend fun addDiscountCode(priceRuleId: Long, code: String): Flow<Unit> = flow {
+        val response = service.addDiscountCode(
+            priceRuleId,
+            DiscountCodePostWrapper(discount_code = DiscountCodePost(code))
+        )
+
+        if (response.isSuccessful) emit(Unit)
+        else throw Exception("Failed to add code")
+    }
+
 
 
 

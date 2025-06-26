@@ -64,11 +64,13 @@ fun SetupNavHost(mainNavController: NavHostController) {
             ProductInfoScreen(sharedViewModel, mainNavController)
         }
 
-        composable("discount_details/{code}/{count}") { backStackEntry ->
-            val code = backStackEntry.arguments?.getString("code") ?: ""
-            val count = backStackEntry.arguments?.getString("count") ?: ""
-            DiscountDetailsScreen(code, count, mainNavController)
+        composable("discount_details/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toLongOrNull()
+            id?.let {
+                DiscountDetailsScreen(priceRuleId = it, navController = mainNavController)
+            }
         }
+
 
     }
 }
