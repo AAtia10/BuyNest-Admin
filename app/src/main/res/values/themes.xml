@@ -2,4 +2,5 @@
 <resources>
 
     <style name="Theme.BuyNestAdmin" parent="android:Theme.Material.Light.NoActionBar" />
+
 </resources>

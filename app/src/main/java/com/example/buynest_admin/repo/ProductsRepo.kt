@@ -1,6 +1,7 @@
 package com.example.buynest_admin.repo
 
 import android.util.Log
+import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.Brand
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.Location
@@ -11,6 +12,7 @@ import com.example.buynest_admin.model.Variant
 import com.example.buynest_admin.model.VariantPost
 import com.example.buynest_admin.model.getBrandLogo
 import com.example.buynest_admin.remote.RemoteDataSource
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -121,6 +123,12 @@ class ProductRepository(
     suspend fun connectInventoryLevel(inventoryItemId: Long, locationId: Long): Flow<Boolean> {
         return remoteDataSource.connectInventoryLevel(inventoryItemId, locationId)
     }
+
+     suspend fun addPriceRule(request: AddPriceRulePost): Flow<PriceRule> {
+         Log.d("API_REQUEST", Gson().toJson(request))
+        return remoteDataSource.addPriceRule(request)
+    }
+
 
 
 
