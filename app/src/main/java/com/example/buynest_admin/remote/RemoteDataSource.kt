@@ -47,6 +47,8 @@ interface RemoteDataSource {
     ): Flow<Boolean>
 
     suspend fun addPriceRule(priceRule: AddPriceRulePost): Flow<PriceRule>
+    suspend fun deletePriceRule(id: Long): Flow<Unit>
+
 
 
 

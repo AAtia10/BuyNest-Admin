@@ -208,6 +208,17 @@ class RemoteDataSourceImpl(
         }
     }
 
+    override suspend fun deletePriceRule(id: Long): Flow<Unit> = flow {
+        val response = service.deletePriceRule(id)
+        Log.d("DELETE_RESPONSE", response.code().toString())
+        if (response.isSuccessful) {
+            emit(Unit)
+        } else {
+            throw Exception("Failed to delete price rule: ${response.code()}")
+        }
+    }
+
+
 
 
 

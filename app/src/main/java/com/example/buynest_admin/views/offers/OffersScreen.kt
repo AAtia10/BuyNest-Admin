@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocalOffer
@@ -26,6 +30,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -66,6 +72,8 @@ import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
 import com.example.buynest_admin.repo.ProductRepository
 import com.example.buynest_admin.ui.theme.MainColor
+import com.example.buynest_admin.ui.theme.red
+import com.example.buynest_admin.ui.theme.white
 import com.example.buynest_admin.viewModels.OffersViewModel
 import com.example.buynest_admin.viewModels.OffersViewModelFactory
 import kotlinx.coroutines.launch
@@ -76,6 +84,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 
+@OptIn(ExperimentalMaterialApi::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun OffersScreen(navController: NavHostController) {
@@ -153,10 +162,77 @@ fun OffersScreen(navController: NavHostController) {
                         modifier = Modifier.padding(vertical = 12.dp)
                     )
                 }
-                items(priceRules) { rule ->
+                items(priceRules, key = { it.id }) { rule ->
+                    val dismissState = rememberDismissState()
+                    var showDeleteConfirm by remember { mutableStateOf(false) }
                     val code = discountMap[rule.id]
-                    OfferCard(rule = rule, discountCode = code, navController = navController)
+
+                    if (dismissState.isDismissed(DismissDirection.EndToStart)) {
+                        LaunchedEffect(rule.id) {
+                            dismissState.reset()
+                        }
+                        showDeleteConfirm = true
+                    }
+
+
+                    if (showDeleteConfirm) {
+                        AlertDialog(
+                            onDismissRequest = { showDeleteConfirm = false },
+                            title = { Text("Delete Offer?") },
+                            text = { Text("Are you sure you want to delete this offer?") },
+                            containerColor = white,
+                            confirmButton = {
+                                Button(onClick = {
+                                    showDeleteConfirm = false
+                                    viewModel.deletePriceRule(
+                                        id = rule.id,
+                                        onSuccess = {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("✅ Deleted successfully")
+                                            }
+                                        },
+                                        onError = {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("❌ Failed to delete: $it")
+                                            }
+                                        }
+                                    )
+                                },colors = ButtonDefaults.buttonColors(containerColor = red)) {
+                                    Text("Delete")
+                                }
+                            },
+                            dismissButton = {
+                                OutlinedButton(onClick = { showDeleteConfirm = false },colors = ButtonDefaults.buttonColors(containerColor = MainColor)) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
+
+                    SwipeToDismiss(
+                        state = dismissState,
+                        directions = setOf(DismissDirection.EndToStart),
+                        background = {
+                            val color = if (dismissState.dismissDirection == DismissDirection.EndToStart) red else Color.Transparent
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(color)
+                                    .padding(end = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                if (dismissState.dismissDirection == DismissDirection.EndToStart) {
+                                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        },
+                        dismissContent = {
+                            OfferCard(rule = rule, discountCode = code, navController = navController)
+                        }
+                    )
                 }
+
             }
             }
         }

@@ -72,6 +72,23 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
         }
     }
 
+    fun deletePriceRule(id: Long, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                repository.deletePriceRule(id).collect {
+                    fetchPriceRules() // Refresh after delete
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                onError(e.message ?: "Unknown error")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+
 }
 
 class OffersViewModelFactory(
