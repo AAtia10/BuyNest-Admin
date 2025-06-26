@@ -1,6 +1,8 @@
 package com.example.buynest_admin.remote
 
 import android.util.Log
+import com.example.buynest_admin.model.AddPriceRulePost
+import com.example.buynest_admin.model.AddPriceRuleWrapper
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.InventoryLevelRequest
@@ -180,12 +182,6 @@ class RemoteDataSourceImpl(
     }
 
 
-
-
-
-
-
-
     override suspend fun connectInventoryLevel(
         inventoryItemId: Long,
         locationId: Long
@@ -199,6 +195,19 @@ class RemoteDataSourceImpl(
         Log.d("CONNECT_RESPONSE", "status=${response.code()}, success=${response.isSuccessful}")
         emit(response.isSuccessful)
     }
+
+
+    override suspend fun addPriceRule(priceRule: AddPriceRulePost): Flow<PriceRule> = flow {
+        val response = service.addPriceRule(AddPriceRuleWrapper(priceRule))
+        Log.d("API_RESPONSE", response.code().toString())
+        Log.d("API_ERROR_BODY", response.errorBody()?.string() ?: "null")
+        if (response.isSuccessful) {
+            emit(response.body()?.price_rule ?: error("No rule returned"))
+        } else {
+            throw Exception("Failed to add price rule: ${response.code()}")
+        }
+    }
+
 
 
 

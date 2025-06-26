@@ -1,5 +1,6 @@
 package com.example.buynest_admin.remote
 
+import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.Location
@@ -44,6 +45,8 @@ interface RemoteDataSource {
         inventoryItemId: Long,
         locationId: Long
     ): Flow<Boolean>
+
+    suspend fun addPriceRule(priceRule: AddPriceRulePost): Flow<PriceRule>
 
 
 

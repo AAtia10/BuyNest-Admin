@@ -19,6 +19,7 @@ import com.example.buynest_admin.views.authentication.login.view.LoginScreen
 import com.example.buynest_admin.views.avaliableProducts.AvaliableProductsScreen
 import com.example.buynest_admin.viewModels.ProductViewModel
 import com.example.buynest_admin.viewModels.ProductViewModelFactory
+import com.example.buynest_admin.views.discountDetails.DiscountDetailsScreen
 import com.example.buynest_admin.views.splash.SplashScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -44,7 +45,7 @@ fun SetupNavHost(mainNavController: NavHostController) {
         }
 
         composable(RoutesScreens.Offers.route) {
-            OffersScreen()
+            OffersScreen(mainNavController)
         }
         composable(RoutesScreens.Categories.route) {
             AllProductsScreen(mainNavController, sharedViewModel)
@@ -62,5 +63,12 @@ fun SetupNavHost(mainNavController: NavHostController) {
         composable(RoutesScreens.ProductInfo.route) {
             ProductInfoScreen(sharedViewModel, mainNavController)
         }
+
+        composable("discount_details/{code}/{count}") { backStackEntry ->
+            val code = backStackEntry.arguments?.getString("code") ?: ""
+            val count = backStackEntry.arguments?.getString("count") ?: ""
+            DiscountDetailsScreen(code, count, mainNavController)
+        }
+
     }
 }

@@ -1,5 +1,11 @@
 package com.example.buynest.views.favourites
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,25 +26,41 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.DiscountCode
+import com.example.buynest_admin.model.PrerequisiteSubtotalRange
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.remote.RemoteDataSourceImpl
 import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
@@ -46,11 +68,17 @@ import com.example.buynest_admin.repo.ProductRepository
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.viewModels.OffersViewModel
 import com.example.buynest_admin.viewModels.OffersViewModelFactory
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun OffersScreen() {
+fun OffersScreen(navController: NavHostController) {
     val viewModel: OffersViewModel = viewModel(
         factory = OffersViewModelFactory(
             ProductRepository.getInstance(
@@ -62,15 +90,36 @@ fun OffersScreen() {
     val priceRules by viewModel.priceRules.collectAsState()
     val discountMap by viewModel.discountMap.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    var showDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
 
     LaunchedEffect(Unit) {
         viewModel.fetchPriceRules()
     }
 
+    if (showDialog) {
+        AddOfferDialog(
+            onDismiss = { showDialog = false },
+            onAdd = { request ->
+                showDialog = false
+                viewModel.addPriceRule(request) {
+                    viewModel.fetchPriceRules()
+
+                    scope.launch {
+                        snackbarHostState.showSnackbar("✅ Added successfully")
+                    }
+                }
+            }
+        )
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: navigate to add offer screen */ },
+                onClick = { showDialog = true },
                 containerColor =  MainColor,
                 contentColor = Color.White
             ) {
@@ -106,24 +155,71 @@ fun OffersScreen() {
                 }
                 items(priceRules) { rule ->
                     val code = discountMap[rule.id]
-                    OfferCard(rule = rule, discountCode = code)
+                    OfferCard(rule = rule, discountCode = code, navController = navController)
                 }
+            }
             }
         }
     }
-}
 
 
 
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun OfferCard(rule: PriceRule, discountCode: DiscountCode?) {
+fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHostController) {
+    val formatter = DateTimeFormatter.ofPattern("d/M/yyyy 'at' H:mm")
+
+    val startFormatted = try {
+        ZonedDateTime.parse(rule.starts_at)
+            .withZoneSameInstant(ZoneId.systemDefault())
+            .format(formatter)
+    } catch (e: Exception) {
+        rule.starts_at
+    }
+
+    val endFormatted = rule.ends_at?.let {
+        try {
+            ZonedDateTime.parse(it.toString())
+                .withZoneSameInstant(ZoneId.systemDefault())
+                .format(formatter)
+        } catch (e: Exception) {
+            it
+        }
+    }
+
+    val valueText = if (rule.value_type == "percentage") {
+        "${rule.value.trimStart('-')}%"
+    } else {
+        "${rule.value.trimStart('-')}"
+    }
+
+    val valueWithCondition = buildString {
+        append("-$valueText")
+
+        val map = rule.prerequisite_subtotal_range as? Map<*, *>
+        val minSubtotal = map?.get("greater_than_or_equal_to") as? String
+        val minSubtotalInt = minSubtotal?.toDoubleOrNull()?.toInt()
+
+        minSubtotalInt?.takeIf  { it > 0 }?.let {
+            append(" After ${it}EGP")
+        }
+    }
+
+
+    val usageLimitText = rule.usage_limit?.toString()?.toDoubleOrNull()?.toInt()
+        ?.takeIf { it > 0 }?.toString()
+
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
+            .clickable {
+                navController.navigate("discount_details/${discountCode?.code}/${discountCode?.usage_count}")
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -138,26 +234,23 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OfferRow(icon = Icons.Default.Schedule, text = "Start: ${rule.starts_at}")
+            OfferRow(icon = Icons.Default.Schedule, text = "Starts: $startFormatted")
 
-
-            rule.ends_at?.toString()?.takeIf { it.isNotBlank() }?.let {
-                OfferRow(icon = Icons.Default.Event, text = "End: $it")
+            endFormatted?.let {
+                OfferRow(icon = Icons.Default.Event, text = "Ends: $it")
             }
 
-            OfferRow(icon = Icons.Default.AttachMoney, text = "Value: ${rule.value} (${rule.value_type})")
+            OfferRow(icon = Icons.Default.AttachMoney, text = "Value: $valueWithCondition")
 
-            rule.usage_limit?.toString()?.takeIf { it != "0" && it != "null" }?.let {
-                OfferRow(icon = Icons.Default.ThumbUp, text = "Max usages: $it")
+            usageLimitText?.let {
+                OfferRow(icon = Icons.Default.ThumbUp, text = "Max usage: $it")
             }
 
-            discountCode?.let {
-                OfferRow(icon = Icons.Default.LocalOffer, text = "Discount Code: ${it.code}")
-                OfferRow(icon = Icons.Default.ThumbUp, text = "Usage Count: ${it.usage_count}")
-            }
+
         }
     }
 }
+
 
 @Composable
 fun OfferRow(icon: ImageVector, text: String) {
@@ -175,6 +268,237 @@ fun OfferRow(icon: ImageVector, text: String) {
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun AddOfferDialog(
+    onDismiss: () -> Unit,
+    onAdd: (AddPriceRulePost) -> Unit
+) {
+    val now = remember { LocalDateTime.now() }
+    var title by remember { mutableStateOf("") }
+    var discountType by remember { mutableStateOf("percentage") }
+    var discountValue by remember { mutableStateOf("") }
+    var usageLimit by remember { mutableStateOf("") }
+    var minSubtotal by remember { mutableStateOf("") }
+
+    var startDateTime by remember { mutableStateOf(now) }
+    var endDateTime by remember { mutableStateOf(now.plusDays(7)) }
+
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+
+    val cairoZone = ZoneId.of("Africa/Cairo")
+    val startZoned = ZonedDateTime.of(startDateTime, cairoZone).toString()
+    val endZoned = ZonedDateTime.of(endDateTime, cairoZone).toString()
+
+    if (showStartPicker) {
+        DateTimePicker(
+            initial = startDateTime,
+            onDateTimeSelected = { startDateTime = it; showStartPicker = false },
+            onDismiss = { showStartPicker = false }
+        )
+    }
+
+    if (showEndPicker) {
+        DateTimePicker(
+            initial = endDateTime,
+            onDateTimeSelected = { endDateTime = it; showEndPicker = false },
+            onDismiss = { showEndPicker = false }
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {},
+        title = { Text("Add Price Rule") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Text("Start Date & Time", style = MaterialTheme.typography.bodyMedium)
+                val timeFormatter = DateTimeFormatter.ofPattern("H:mm")
+                OutlinedButton(
+                    onClick = { showStartPicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+
+                    Text("${startDateTime.toLocalDate()} ${startDateTime.toLocalTime().format(timeFormatter)}", color = MainColor)
+
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text("End Date & Time", style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(
+                    onClick = { showEndPicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("${endDateTime.toLocalDate()} ${endDateTime.toLocalTime().format(timeFormatter)}", color = MainColor)
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = { discountType = "percentage" },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (discountType == "percentage") MainColor else Color.LightGray
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Percentage",
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    Button(
+                        onClick = { discountType = "fixed_amount" },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (discountType == "fixed_amount") MainColor else Color.LightGray
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Fixed",
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = discountValue,
+                    onValueChange = { discountValue = it },
+                    label = { Text("Discount amount") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = minSubtotal,
+                    onValueChange = { minSubtotal = it },
+                    label = { Text("Minimum subtotal") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = usageLimit,
+                    onValueChange = { usageLimit = it },
+                    label = { Text("Usage Limit") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel", color = Color.Black)
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Button(
+                        onClick = {
+                            val request = AddPriceRulePost(
+                                title = title,
+                                value = "-${discountValue.toDoubleOrNull()}",
+                                value_type = discountType,
+                                starts_at = startZoned,
+                                ends_at = endZoned,
+                                usage_limit = usageLimit.toIntOrNull(),
+                                prerequisite_subtotal_range = minSubtotal.toDoubleOrNull()?.let {
+                                    PrerequisiteSubtotalRange(it)
+                                }
+                            )
+                            onAdd(request)
+                            onDismiss()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = MainColor)
+                    ) {
+                        Text("Done", color = Color.White)
+                    }
+                }
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun DateTimePicker(
+    initial: LocalDateTime,
+    onDateTimeSelected: (LocalDateTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val picker = remember { mutableStateOf(initial) }
+
+    val showDate = remember { mutableStateOf(true) }
+
+    if (showDate.value) {
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                val selectedDate = LocalDate.of(year, month + 1, day)
+                picker.value = picker.value.withYear(year).withMonth(month + 1).withDayOfMonth(day)
+                showDate.value = false
+            },
+            initial.year,
+            initial.monthValue - 1,
+            initial.dayOfMonth
+        ).apply {
+            datePicker.minDate = System.currentTimeMillis()
+        }.show()
+    } else {
+        TimePickerDialog(
+            context,
+            { _, hour, minute ->
+                picker.value = picker.value.withHour(hour).withMinute(minute)
+                onDateTimeSelected(picker.value)
+            },
+            initial.hour,
+            initial.minute,
+            true
+        ).show()
+    }
+}
+
+
+
+
 
 
 

@@ -1,5 +1,7 @@
 package com.example.buynest_admin.remote
 
+import com.example.buynest_admin.model.AddPriceRuleResponse
+import com.example.buynest_admin.model.AddPriceRuleWrapper
 import com.example.buynest_admin.model.AddProductResponse
 import com.example.buynest_admin.model.CollectionsResponse
 import com.example.buynest_admin.model.DiscountCodesResponse
@@ -86,6 +88,13 @@ interface ShopifyService {
     suspend fun connectInventoryLevel(
         @Body body: Map<String, Long>
     ): Response<Unit>
+
+    @POST("admin/api/2024-04/price_rules.json")
+    suspend fun addPriceRule(
+        @Body priceRule: AddPriceRuleWrapper
+    ): Response<AddPriceRuleResponse>
+
+
 
 
 

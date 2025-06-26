@@ -1,8 +1,10 @@
 package com.example.buynest_admin.viewModels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.repo.ProductRepository
@@ -52,6 +54,24 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
             _discountMap.value = map
         }
     }
+
+
+    fun addPriceRule(newRule: AddPriceRulePost, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                repository.addPriceRule(newRule).collect {
+                    fetchPriceRules()
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                Log.e("AddPriceRule", "Error: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
 }
 
 class OffersViewModelFactory(
