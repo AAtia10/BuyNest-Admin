@@ -129,6 +129,11 @@ class ProductRepository(
         return remoteDataSource.addPriceRule(request)
     }
 
+    suspend fun deletePriceRule(id: Long): Flow<Unit> {
+        return remoteDataSource.deletePriceRule(id)
+    }
+
+
 
 
 

@@ -94,6 +94,12 @@ interface ShopifyService {
         @Body priceRule: AddPriceRuleWrapper
     ): Response<AddPriceRuleResponse>
 
+    @DELETE("admin/api/2024-04/price_rules/{id}.json")
+    suspend fun deletePriceRule(
+        @Path("id") id: Long
+    ): Response<Unit>
+
+
 
 
 
