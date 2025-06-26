@@ -14,7 +14,7 @@ data class AddPriceRulePost(
     val customer_selection: String = "all",
     val starts_at: String,
     val ends_at: String,
-    val usage_limit: Int?,
+    val usage_limit: Int?=null,
     val once_per_customer: Boolean = false,
     val prerequisite_subtotal_range: PrerequisiteSubtotalRange? = null,
 )

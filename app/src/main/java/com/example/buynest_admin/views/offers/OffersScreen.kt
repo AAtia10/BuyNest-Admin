@@ -270,21 +270,13 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
         "${rule.value.trimStart('-')}"
     }
 
-    val valueWithCondition = buildString {
-        append("-$valueText")
-
-        val map = rule.prerequisite_subtotal_range as? Map<*, *>
-        val minSubtotal = map?.get("greater_than_or_equal_to") as? String
-        val minSubtotalInt = minSubtotal?.toDoubleOrNull()?.toInt()
-
-        minSubtotalInt?.takeIf  { it > 0 }?.let {
-            append(" After ${it}EGP")
-        }
-    }
+    val valueWithCondition = "-$valueText"
 
 
-    val usageLimitText = rule.usage_limit?.toString()?.toDoubleOrNull()?.toInt()
-        ?.takeIf { it > 0 }?.toString()
+
+
+
+
 
     Card(
         modifier = Modifier
@@ -318,9 +310,6 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
 
             OfferRow(icon = Icons.Default.AttachMoney, text = "Value: $valueWithCondition")
 
-            usageLimitText?.let {
-                OfferRow(icon = Icons.Default.ThumbUp, text = "Max usage: $it")
-            }
 
 
         }
@@ -355,8 +344,7 @@ fun AddOfferDialog(
     var title by remember { mutableStateOf("") }
     var discountType by remember { mutableStateOf("percentage") }
     var discountValue by remember { mutableStateOf("") }
-    var usageLimit by remember { mutableStateOf("") }
-    var minSubtotal by remember { mutableStateOf("") }
+
 
     var startDateTime by remember { mutableStateOf(now) }
     var endDateTime by remember { mutableStateOf(now.plusDays(7)) }
@@ -469,23 +457,6 @@ fun AddOfferDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = minSubtotal,
-                    onValueChange = { minSubtotal = it },
-                    label = { Text("Minimum subtotal") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = usageLimit,
-                    onValueChange = { usageLimit = it },
-                    label = { Text("Usage Limit") },
-                    modifier = Modifier.fillMaxWidth()
-                )
 
                 Spacer(Modifier.height(24.dp))
 
@@ -510,10 +481,8 @@ fun AddOfferDialog(
                                 value_type = discountType,
                                 starts_at = startZoned,
                                 ends_at = endZoned,
-                                usage_limit = usageLimit.toIntOrNull(),
-                                prerequisite_subtotal_range = minSubtotal.toDoubleOrNull()?.let {
-                                    PrerequisiteSubtotalRange(it)
-                                }
+                                usage_limit = null,
+                                prerequisite_subtotal_range = null
                             )
                             onAdd(request)
                             onDismiss()
