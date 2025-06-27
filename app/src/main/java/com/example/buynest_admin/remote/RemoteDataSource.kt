@@ -51,8 +51,10 @@ interface RemoteDataSource {
     suspend fun addDiscountCode(priceRuleId: Long, code: String): Flow<Unit>
 
     suspend fun deleteDiscountCode(priceRuleId: Long, codeId: Long): Flow<Unit>
-
-
-
-
+    suspend fun updatePriceRule(id: Long, value: String, endsAt: String?): Boolean
 }
+
+
+
+
+

@@ -139,17 +139,9 @@ class ProductRepository(
         return remoteDataSource.deleteDiscountCode(priceRuleId, codeId)
     }
 
-
-
-
-
-
-
-
-
-
-
-
+    suspend fun updatePriceRule(id: Long, value: String, endsAt: String?): Boolean {
+        return remoteDataSource.updatePriceRule(id, value, endsAt)
+    }
 
 
 }
