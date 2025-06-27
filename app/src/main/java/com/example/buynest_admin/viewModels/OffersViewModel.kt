@@ -118,6 +118,30 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
     }
 
 
+    fun updatePriceRule(
+        id: Long,
+        newValue: String,
+        newEndDate: String?, // 👈 nullable
+        onSuccess: () -> Unit,
+        onError: () -> Unit
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.updatePriceRule(id, newValue, newEndDate) // 👈 nullable
+            if (result) {
+                fetchPriceRules()
+                onSuccess()
+            } else {
+                onError()
+            }
+            _isLoading.value = false
+        }
+    }
+
+
+
+
+
 
 
 

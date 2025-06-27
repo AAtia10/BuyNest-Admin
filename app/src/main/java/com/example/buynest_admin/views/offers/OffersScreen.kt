@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -74,6 +75,7 @@ import com.example.buynest_admin.ui.theme.red
 import com.example.buynest_admin.ui.theme.white
 import com.example.buynest_admin.viewModels.OffersViewModel
 import com.example.buynest_admin.viewModels.OffersViewModelFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -226,7 +228,14 @@ fun OffersScreen(navController: NavHostController) {
                             }
                         },
                         dismissContent = {
-                            OfferCard(rule = rule, discountCode = code, navController = navController)
+                            OfferCard(
+                                rule = rule,
+                                discountCode = code,
+                                navController = navController,
+                                viewModel = viewModel,
+                                snackbarHostState = snackbarHostState,
+                                scope = scope
+                            )
                         }
                     )
                 }
@@ -241,7 +250,47 @@ fun OffersScreen(navController: NavHostController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHostController) {
+fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHostController,viewModel: OffersViewModel,snackbarHostState: SnackbarHostState,
+              scope: CoroutineScope
+) {
+
+
+    var isEditingValue by remember { mutableStateOf(false) }
+    var isEditingEndDate by remember { mutableStateOf(false) }
+
+    var editedValue by remember { mutableStateOf(rule.value.trimStart('-')) }
+    var editedEndDate by remember {
+        mutableStateOf(
+            try {
+                ZonedDateTime.parse((rule.ends_at ?: "").toString()).toLocalDateTime()
+            } catch (e: Exception) {
+                LocalDateTime.now().plusDays(7)
+            }
+        )
+    }
+
+    LaunchedEffect(rule) {
+        editedValue = rule.value.trimStart('-')
+        editedEndDate = try {
+            ZonedDateTime.parse((rule.ends_at ?: "").toString()).toLocalDateTime()
+        } catch (e: Exception) {
+            LocalDateTime.now().plusDays(7)
+        }
+    }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        DateTimePicker(
+            initial = editedEndDate,
+            onDateTimeSelected = {
+                editedEndDate = it
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+
     val formatter = DateTimeFormatter.ofPattern("d/M/yyyy 'at' H:mm")
 
     val startFormatted = try {
@@ -272,10 +321,6 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
 
 
 
-
-
-
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -302,12 +347,101 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
 
             OfferRow(icon = Icons.Default.Schedule, text = "Starts: $startFormatted")
 
-            endFormatted?.let {
-                OfferRow(icon = Icons.Default.Event, text = "Ends: $it")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OfferRow(
+                    icon = Icons.Default.Event,
+                    text = if (isEditingEndDate)
+                        "Ends:"
+                    else
+                        "Ends: $endFormatted"
+                )
+
+                if (isEditingEndDate) {
+                    OutlinedButton(onClick = { showDatePicker = true }) {
+                        Text(editedEndDate.toLocalDate().toString(), color = MainColor)
+                    }
+                }
+
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit End Date",
+                    tint = MainColor,
+                    modifier = Modifier
+                        .clickable { isEditingEndDate  = true }
+                        .padding(start = 8.dp)
+                )
             }
 
-            OfferRow(icon = Icons.Default.AttachMoney, text = "Value: $valueWithCondition")
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OfferRow(
+                    icon = Icons.Default.AttachMoney,
+                    text = if (isEditingValue ) "Value:" else "Value: $valueWithCondition"
+                )
+
+                if (isEditingValue ) {
+                    OutlinedTextField(
+                        value = editedValue,
+                        onValueChange = { editedValue = it },
+                        modifier = Modifier.width(100.dp),
+                        singleLine = true
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Value",
+                    tint = MainColor,
+                    modifier = Modifier
+                        .clickable { isEditingValue  = true }
+                        .padding(start = 8.dp)
+                )
+            }
+
+            if (isEditingValue || isEditingEndDate) {
+                Icon(
+                    imageVector = Icons.Default.ThumbUp,
+                    contentDescription = "Save",
+                    tint = MainColor,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .clickable {
+                            val cairoZone = ZoneId.of("Africa/Cairo")
+                            val endsAtZoned = if (isEditingEndDate) {
+                                ZonedDateTime.of(editedEndDate, cairoZone).toString()
+                            } else null
+                            val editedVal = "-${editedValue}"
+
+                            viewModel.updatePriceRule(
+                                rule.id,
+                                editedVal,
+                                endsAtZoned,
+                                onSuccess = {
+                                    isEditingValue = false
+                                    isEditingEndDate = false
+                                    viewModel.fetchPriceRules()
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("✅ Saved successfully")
+                                    }
+                                },
+                                onError = {
+                                    isEditingValue = false
+                                    isEditingEndDate = false
+
+                                }
+                            )
+                        }
+                        .padding(top = 12.dp)
+                )
+            }
 
 
         }

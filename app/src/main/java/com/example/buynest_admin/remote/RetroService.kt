@@ -11,6 +11,8 @@ import com.example.buynest_admin.model.LocationResponse
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRulesResponse
 import com.example.buynest_admin.model.ProductsResponse
+import com.example.buynest_admin.model.SingleProductResponse
+import com.example.buynest_admin.model.UpdatePriceRuleWrapper
 import com.example.buynest_admin.model.UpdateProductWrapper
 import com.example.buynest_admin.model.VariantRequest
 import com.example.buynest_admin.model.VariantWrapper
@@ -29,7 +31,9 @@ interface ShopifyService {
     @GET("admin/api/2024-04/products/{id}.json")
     suspend fun getProductById(
         @Path("id") productId: Long
-    ): Response<ProductsResponse>
+    ): Response<SingleProductResponse>
+
+
 
 
     @GET("admin/api/2024-04/price_rules.json")
@@ -113,29 +117,11 @@ interface ShopifyService {
     ): Response<Unit>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    @PUT("admin/api/2024-04/price_rules/{id}.json")
+    suspend fun updatePriceRule(
+        @Path("id") id: Long,
+        @Body body: UpdatePriceRuleWrapper
+    ): Response<AddPriceRuleResponse>
 
 
 }

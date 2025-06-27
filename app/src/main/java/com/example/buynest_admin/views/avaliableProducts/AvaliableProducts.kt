@@ -81,6 +81,18 @@ fun AvaliableProductsScreen(navController: NavHostController, viewModel: Product
         } ?: products
     }
 
+    LaunchedEffect(navController.currentBackStackEntry) {
+        val handle = navController.currentBackStackEntry?.savedStateHandle
+        val liveData = handle?.getLiveData<Boolean>("refresh")
+
+        liveData?.observeForever { shouldRefresh ->
+            if (shouldRefresh == true) {
+                viewModel.fetchProducts()
+                handle.set("refresh", false)
+            }
+        }
+    }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(

@@ -12,6 +12,8 @@ import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
+import com.example.buynest_admin.model.UpdatePriceRuleBody
+import com.example.buynest_admin.model.UpdatePriceRuleWrapper
 import com.example.buynest_admin.model.UpdateProductBody
 import com.example.buynest_admin.model.UpdateProductWrapper
 import com.example.buynest_admin.model.Variant
@@ -62,7 +64,7 @@ class RemoteDataSourceImpl(
     override suspend fun getProductById(id: Long): Flow<Product> = flow {
         val response = service.getProductById(id)
         if (response.isSuccessful) {
-            val product = response.body()?.products?.firstOrNull()
+            val product = response.body()?.product
             if (product != null) {
                 emit(product)
             } else {
@@ -72,6 +74,7 @@ class RemoteDataSourceImpl(
             throw Exception("Failed to fetch product: ${response.code()}")
         }
     }
+
 
     override suspend fun setInventoryLevel(
         inventoryItemId: Long,
@@ -239,12 +242,20 @@ class RemoteDataSourceImpl(
         }
     }
 
-
-
-
-
-
-
+    override suspend fun updatePriceRule(id: Long, newValue: String, newEndDate: String?): Boolean {
+        val requestBody = UpdatePriceRuleWrapper(
+            price_rule = UpdatePriceRuleBody(
+                value = newValue,
+                ends_at = newEndDate // 👈 ممكن تكون null
+            )
+        )
+        return try {
+            val response = service.updatePriceRule(id, requestBody)
+            response.isSuccessful
+        } catch (e: Exception) {
+            false
+        }
+    }
 
 
 

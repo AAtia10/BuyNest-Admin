@@ -49,6 +49,13 @@ class ProductViewModel(
     private val _locations = MutableStateFlow<List<Location>>(emptyList())
     val locations: StateFlow<List<Location>> = _locations
 
+    private val _isUpdating = MutableStateFlow(false)
+    val isUpdating: StateFlow<Boolean> = _isUpdating
+
+    private val _isDeletingVariant = MutableStateFlow(false)
+    val isDeletingVariant: StateFlow<Boolean> = _isDeletingVariant
+
+
     fun setSelectedProduct(product: Product) {
         _selectedProduct.value = product
     }
@@ -215,6 +222,26 @@ class ProductViewModel(
         }
     }
 
+    fun updateVariantWithProductData(
+        productId: Long,
+        variantId: Long,
+        variant: VariantPost,
+        newTitle: String,
+        newDesc: String
+    ) {
+        viewModelScope.launch {
+            _isUpdating.value = true
+            try {
+                updateVariant(variantId, variant)
+                updateProductTitleAndDescription(productId, newTitle, newDesc)
+                fetchProductById(productId)
+            } finally {
+                _isUpdating.value = false
+            }
+        }
+    }
+
+
 
     fun addProductWithInventory(
         product: NewProductPost,
@@ -277,8 +304,14 @@ class ProductViewModel(
         }
     }
 
-    fun deleteVariant(productId: Long, variantId: Long, onSuccess: () -> Unit, onError: (Throwable) -> Unit) {
+    fun deleteVariantWithLoading(
+        productId: Long,
+        variantId: Long,
+        onSuccess: () -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
         viewModelScope.launch {
+            _isDeletingVariant.value = true
             try {
                 repository.deleteVariant(productId, variantId).collect { success ->
                     if (success) onSuccess()
@@ -286,9 +319,12 @@ class ProductViewModel(
                 }
             } catch (e: Exception) {
                 onError(e)
+            } finally {
+                _isDeletingVariant.value = false
             }
         }
     }
+
 
 
 
