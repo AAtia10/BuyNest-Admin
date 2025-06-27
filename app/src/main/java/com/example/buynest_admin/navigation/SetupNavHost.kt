@@ -58,7 +58,7 @@ fun SetupNavHost(mainNavController: NavHostController) {
             HomeScreen(mainNavController, sharedViewModel)
         }
         composable(RoutesScreens.AvailableProducts.route) {
-            AvaliableProductsScreen(sharedViewModel)
+            AvaliableProductsScreen(mainNavController, sharedViewModel)
         }
         composable(RoutesScreens.ProductInfo.route) {
             ProductInfoScreen(sharedViewModel, mainNavController)

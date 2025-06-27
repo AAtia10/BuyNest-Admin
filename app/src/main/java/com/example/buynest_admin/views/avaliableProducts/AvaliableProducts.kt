@@ -5,6 +5,7 @@ package com.example.buynest_admin.views.avaliableProducts
 import com.example.buynest_admin.model.Product
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,7 +55,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.buynest_admin.RoutesScreens
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.ui.theme.red
 import com.example.buynest_admin.ui.theme.white
@@ -64,7 +67,7 @@ import com.example.buynest_admin.viewModels.ProductViewModel
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AvaliableProductsScreen(viewModel: ProductViewModel) {
+fun AvaliableProductsScreen(navController: NavHostController, viewModel: ProductViewModel) {
 
     val products by viewModel.products.collectAsState()
     val selectedBrand by viewModel.selectedBrand.collectAsState()
@@ -153,7 +156,10 @@ fun AvaliableProductsScreen(viewModel: ProductViewModel) {
                                 }
                             },
                             dismissContent = {
-                                ProductCard(product)
+                                ProductCard(product){
+                                    viewModel.setSelectedProduct(product)
+                                    navController.navigate(RoutesScreens.ProductInfo.route)
+                                }
                             }
                         )
                     }
@@ -162,7 +168,6 @@ fun AvaliableProductsScreen(viewModel: ProductViewModel) {
         }
     }
 
-    // Show Snackbar when a product is deleted
     LaunchedEffect(productDeleted) {
         if (productDeleted) {
             snackbarHostState.showSnackbar("🗑️ Product deleted successfully")
@@ -173,7 +178,7 @@ fun AvaliableProductsScreen(viewModel: ProductViewModel) {
 
 
 @Composable
-fun ProductCard(product: Product) {
+fun ProductCard(product: Product,onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(6.dp),
@@ -181,6 +186,7 @@ fun ProductCard(product: Product) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable { onClick() }
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             AsyncImage(
