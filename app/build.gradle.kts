@@ -94,6 +94,23 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager-indicators:0.34.0")
 
 
+    val androidXTestExtKotlinRunnerVersion by extra("1.1.3")
+    val androidXTestCoreVersion by extra("1.6.1")
+
+    testImplementation ("io.mockk:mockk-android:1.13.17")
+    testImplementation ("io.mockk:mockk-agent:1.13.17")
+
+    testImplementation ("androidx.test.ext:junit-ktx:$androidXTestExtKotlinRunnerVersion")
+    testImplementation ("androidx.test:core-ktx:$androidXTestCoreVersion")
+    testImplementation ("org.robolectric:robolectric:4.11")
+
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
+    androidTestImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
+    testImplementation(kotlin("test"))
+
+
+
+
 
 
 
