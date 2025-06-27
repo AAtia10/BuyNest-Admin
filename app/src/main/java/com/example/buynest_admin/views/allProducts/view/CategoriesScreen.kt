@@ -68,7 +68,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import com.example.buynest_admin.RoutesScreens
 import com.example.buynest_admin.model.ImageData
@@ -101,6 +103,10 @@ fun AllProductsScreen(navController: NavHostController,viewModel: ProductViewMod
     LaunchedEffect(Unit) {
         viewModel.fetchLocations()
     }
+
+
+
+
 
     Scaffold(
         snackbarHost = {

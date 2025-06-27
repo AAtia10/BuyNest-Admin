@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,7 +33,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 
-@OptIn(ExperimentalPagerApi::class)
+@OptIn(ExperimentalPagerApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProductInfoScreen(viewModel: ProductViewModel, navController: NavHostController) {
     val product by viewModel.selectedProduct.collectAsState()
@@ -73,6 +74,9 @@ fun ProductInfoScreen(viewModel: ProductViewModel, navController: NavHostControl
     val snackbarHostState = remember { SnackbarHostState() }
     val locationId by viewModel.locations.collectAsState()
     val selectedLocationId = locationId.firstOrNull()?.id
+    val isUpdating by viewModel.isUpdating.collectAsState()
+    val isDeletingVariant by viewModel.isDeletingVariant.collectAsState()
+
 
     var isEditingTitle by remember { mutableStateOf(false) }
     var isEditingDesc by remember { mutableStateOf(false) }
@@ -115,7 +119,31 @@ fun ProductInfoScreen(viewModel: ProductViewModel, navController: NavHostControl
 
 
 
+
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Product Details")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        viewModel.fetchProducts()
+                        navController.popBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MainColor,
+                    titleContentColor = Color.White
+                )
+            )
+        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Column(
@@ -347,43 +375,51 @@ fun ProductInfoScreen(viewModel: ProductViewModel, navController: NavHostControl
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    if (selectedSize != null && selectedColor != null && variant != null) {
-                        coroutineScope.launch {
-                            viewModel.updateVariant(
+            if (isUpdating) {
+                CircularProgressIndicator(color = MainColor)
+            } else {
+                Button(
+                    onClick = {
+                        if (selectedSize != null && selectedColor != null && variant != null) {
+                            viewModel.updateVariantWithProductData(
+                                productId = product!!.id,
                                 variantId = variant!!.id,
                                 variant = VariantPost(
                                     option1 = selectedSize!!,
                                     option2 = selectedColor!!,
                                     price = editedPrice,
                                     inventory_quantity = editedAvailability.toIntOrNull() ?: 0
-                                )
+                                ),
+                                newTitle = editedTitle,
+                                newDesc = editedDesc
                             )
-
-                            viewModel.updateProductTitleAndDescription(product!!.id, editedTitle, editedDesc)
-                            viewModel.fetchProductById(product!!.id)
                             isEditingTitle = false
                             isEditingDesc = false
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor)
-            ) {
-                Text(text = "Save Product", color = Color.White)
-            }
-
-            if (variant != null) {
-                Button(
-                    onClick = {
-                        showDeleteVariantDialog = true
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = red)
+                    colors = ButtonDefaults.buttonColors(containerColor = MainColor)
                 ) {
-                    Text("Delete Variant", color = Color.White)
+                    Text(text = "Save Product", color = Color.White)
                 }
+            }
+
+
+            if (variant != null) {
+                if (isDeletingVariant) {
+                    CircularProgressIndicator(color = red)
+                } else {
+                    Button(
+                        onClick = {
+                            showDeleteVariantDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = red)
+                    ) {
+                        Text("Delete Variant", color = Color.White)
+                    }
+                }
+
             }
 
             if (showDeleteVariantDialog) {
@@ -396,7 +432,7 @@ fun ProductInfoScreen(viewModel: ProductViewModel, navController: NavHostControl
                             onClick = {
                                 showDeleteVariantDialog = false
                                 coroutineScope.launch {
-                                    viewModel.deleteVariant(
+                                    viewModel.deleteVariantWithLoading(
                                         productId = product!!.id,
                                         variantId = variant!!.id,
                                         onSuccess = {

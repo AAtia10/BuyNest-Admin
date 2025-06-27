@@ -62,7 +62,7 @@ class RemoteDataSourceImpl(
     override suspend fun getProductById(id: Long): Flow<Product> = flow {
         val response = service.getProductById(id)
         if (response.isSuccessful) {
-            val product = response.body()?.products?.firstOrNull()
+            val product = response.body()?.product
             if (product != null) {
                 emit(product)
             } else {
@@ -72,6 +72,7 @@ class RemoteDataSourceImpl(
             throw Exception("Failed to fetch product: ${response.code()}")
         }
     }
+
 
     override suspend fun setInventoryLevel(
         inventoryItemId: Long,
