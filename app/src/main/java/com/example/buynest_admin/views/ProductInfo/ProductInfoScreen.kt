@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -526,6 +527,7 @@ fun AddVariantDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = White,
         confirmButton = {
             Button(onClick = {
                 onSubmit(
