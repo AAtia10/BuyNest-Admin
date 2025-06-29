@@ -407,46 +407,44 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
             }
 
             if (isEditingValue || isEditingEndDate) {
-                Icon(
-                    imageVector = Icons.Default.ThumbUp,
-                    contentDescription = "Save",
-                    tint = MainColor,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clickable {
-                            val cairoZone = ZoneId.of("Africa/Cairo")
-                            val endsAtZoned = if (isEditingEndDate) {
-                                ZonedDateTime.of(editedEndDate, cairoZone).toString()
-                            } else null
-                            val editedVal = "-${editedValue}"
+                Button( colors = ButtonDefaults.buttonColors(containerColor = MainColor),
+                    onClick = {
+                        val cairoZone = ZoneId.of("Africa/Cairo")
+                        val endsAtZoned = if (isEditingEndDate) {
+                            ZonedDateTime.of(editedEndDate, cairoZone).toString()
+                        } else null
+                        val editedVal = "-${editedValue}"
 
-                            viewModel.updatePriceRule(
-                                rule.id,
-                                editedVal,
-                                endsAtZoned,
-                                onSuccess = {
-                                    isEditingValue = false
-                                    isEditingEndDate = false
-                                    viewModel.fetchPriceRules()
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("✅ Saved successfully")
-                                    }
-                                },
-                                onError = {
-                                    isEditingValue = false
-                                    isEditingEndDate = false
-
+                        viewModel.updatePriceRule(
+                            rule.id,
+                            editedVal,
+                            endsAtZoned,
+                            onSuccess = {
+                                isEditingValue = false
+                                isEditingEndDate = false
+                                viewModel.fetchPriceRules()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("✅ Saved successfully")
                                 }
-                            )
-                        }
-                        .padding(top = 12.dp)
-                )
+                            },
+                                    onError = {
+                                        isEditingValue = false
+                                        isEditingEndDate = false
+                                    }
+                        )
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Save")
+                }
             }
+
+        }
 
 
         }
     }
-}
+
 
 
 @Composable
