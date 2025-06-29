@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.White
@@ -23,7 +24,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.buynest_admin.model.NetworkStatusMonitor
 import com.example.buynest_admin.ui.theme.MainColor
+import com.example.buynest_admin.views.noInternetAnimation.NoInternetAnimation
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import np.com.susanthapa.curved_bottom_navigation.CurvedBottomNavigationView
 
@@ -32,6 +35,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NetworkStatusMonitor.register(applicationContext)
         enableEdgeToEdge()
         setContent {
             Surface(modifier = Modifier.fillMaxSize()) {
@@ -47,6 +51,12 @@ class MainActivity : ComponentActivity() {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
+
+        val isConnected by NetworkStatusMonitor.isConnected.collectAsState()
+        if (!isConnected) {
+            NoInternetAnimation()
+            return
+        }
 
         val hideBottomBarRoutes = listOf(
             RoutesScreens.Login.route,

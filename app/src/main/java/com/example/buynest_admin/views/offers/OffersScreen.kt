@@ -427,10 +427,10 @@ fun OfferCard(rule: PriceRule, discountCode: DiscountCode?, navController: NavHo
                                     snackbarHostState.showSnackbar("✅ Saved successfully")
                                 }
                             },
-                                    onError = {
-                                        isEditingValue = false
-                                        isEditingEndDate = false
-                                    }
+                            onError = {
+                                isEditingValue = false
+                                isEditingEndDate = false
+                            }
                         )
                     },
                     modifier = Modifier.align(Alignment.End)

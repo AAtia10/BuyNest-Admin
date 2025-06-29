@@ -139,12 +139,6 @@ class OffersViewModel(private val repository: ProductRepository) : ViewModel() {
     }
 
 
-
-
-
-
-
-
 }
 
 class OffersViewModelFactory(
