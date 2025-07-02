@@ -3,6 +3,7 @@ package com.example.buynest_admin.remote
 import android.util.Log
 import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.AddPriceRuleWrapper
+import com.example.buynest_admin.model.Category
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.DiscountCodePost
@@ -12,6 +13,7 @@ import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
+import com.example.buynest_admin.model.Publication
 import com.example.buynest_admin.model.UpdatePriceRuleBody
 import com.example.buynest_admin.model.UpdatePriceRuleWrapper
 import com.example.buynest_admin.model.UpdateProductBody
@@ -126,6 +128,32 @@ class RemoteDataSourceImpl(
         if (response.isSuccessful) {
             val addedProduct = response.body()?.product
             if (addedProduct != null) {
+
+                val pubResponse = service.getPublications()
+                Log.e("TAG", "${pubResponse.body()?.publications}" )
+                if (pubResponse.isSuccessful) {
+                    val targetPubId = pubResponse.body()?.publications
+                        ?.firstOrNull { it.name == "MAD45-Alex-And03" }?.id
+
+
+                    if (targetPubId != null) {
+                        val publishBody = mapOf(
+                            "product_id" to addedProduct.id.toString(),
+                            "published_scope" to "web"
+                        )
+                        val publishResponse = service.publishProductToChannel(
+                            publicationId = targetPubId,
+                            body = publishBody
+                        )
+                        Log.d("PUBLISH_PRODUCT", "Published to Store? ${publishResponse.isSuccessful}")
+                    } else {
+                        Log.w("PUBLISH_PRODUCT", "Store publication not found")
+                    }
+                } else {
+                    Log.w("PUBLISH_PRODUCT", "Failed to fetch publications: ${pubResponse.code()}")
+                }
+
+                // ✅ Emit the added product
                 emit(addedProduct)
             } else {
                 throw IllegalStateException("No product returned")
@@ -134,6 +162,7 @@ class RemoteDataSourceImpl(
             throw Exception("Failed to add product: ${response.code()}")
         }
     }
+
 
     override suspend fun deleteProduct(productId: Long): Flow<Boolean> = flow {
         val response = service.deleteProduct(productId)
@@ -246,7 +275,7 @@ class RemoteDataSourceImpl(
         val requestBody = UpdatePriceRuleWrapper(
             price_rule = UpdatePriceRuleBody(
                 value = newValue,
-                ends_at = newEndDate // 👈 ممكن تكون null
+                ends_at = newEndDate
             )
         )
         return try {
@@ -256,6 +285,59 @@ class RemoteDataSourceImpl(
             false
         }
     }
+
+    override suspend fun getPublications(): Flow<List<Publication>> = flow {
+        val response = service.getPublications()
+        if (response.isSuccessful) {
+            emit(response.body()?.publications ?: emptyList())
+        } else {
+            throw Exception("Failed to fetch publications: ${response.code()}")
+        }
+    }
+
+    override suspend fun publishProductToChannel(publicationId: Long, productId: Long): Flow<Unit> = flow {
+        val response = service.publishProductToChannel(
+            publicationId = publicationId,
+            body = mapOf(
+                "product_id" to productId.toString(),
+                "published_scope" to "web"
+            )
+        )
+        if (response.isSuccessful) emit(Unit)
+        else throw Exception("Publishing failed: ${response.code()}")
+    }
+
+    override suspend fun addProductToCollection(productId: Long, collectionId: Long): Flow<Unit> = flow {
+        val body = mapOf(
+            "collect" to mapOf(
+                "product_id" to productId,
+                "collection_id" to collectionId
+            )
+        )
+        val response = service.addProductToCollection(body)
+        if (response.isSuccessful) emit(Unit)
+        else throw Exception("Failed to add product to collection: ${response.code()}")
+    }
+
+    override suspend fun getCategories(): List<Category> {
+        val response = service.getCollections()
+        return if (response.isSuccessful) {
+            val collections = response.body()?.smart_collections ?: emptyList()
+            collections.map { customCollection ->
+                Category(
+                    id = customCollection.id,
+                    title = customCollection.title,
+                )
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+
+
+
+
 
 
 

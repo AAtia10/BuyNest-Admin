@@ -165,8 +165,8 @@ fun AllProductsScreen(navController: NavHostController,viewModel: ProductViewMod
                                 productTitle = product.title,
                                 onConfirm = {
                                     viewModel.deleteProduct(product.id) {
-                                        productDeleted = true // ← فعل الفلاج
-                                        viewModel.fetchProducts() // ← حدث المنتجات
+                                        productDeleted = true
+                                        viewModel.fetchProducts()
                                     }
 
                                     showDeleteDialog = false
@@ -578,7 +578,7 @@ fun AddProductDialog(
                                 val gson = Gson()
                                 Log.d("PRODUCT", gson.toJson(newProduct))
 
-                                viewModel.addProductWithInventory(newProduct, locId, variant) {
+                                viewModel.addProductWithInventory2(newProduct, locId, variant) {
                                     onProductAdded()
                                 }
                             }

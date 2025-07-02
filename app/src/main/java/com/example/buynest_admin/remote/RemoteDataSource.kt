@@ -1,12 +1,14 @@
 package com.example.buynest_admin.remote
 
 import com.example.buynest_admin.model.AddPriceRulePost
+import com.example.buynest_admin.model.Category
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.DiscountCode
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRule
 import com.example.buynest_admin.model.Product
+import com.example.buynest_admin.model.Publication
 import com.example.buynest_admin.model.Variant
 import com.example.buynest_admin.model.VariantPost
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +54,10 @@ interface RemoteDataSource {
 
     suspend fun deleteDiscountCode(priceRuleId: Long, codeId: Long): Flow<Unit>
     suspend fun updatePriceRule(id: Long, value: String, endsAt: String?): Boolean
+    suspend fun getPublications(): Flow<List<Publication>>
+    suspend fun publishProductToChannel(publicationId: Long, productId: Long): Flow<Unit>
+    suspend fun addProductToCollection(productId: Long, collectionId: Long): Flow<Unit>
+    suspend fun getCategories(): List<Category>
 }
 
 
