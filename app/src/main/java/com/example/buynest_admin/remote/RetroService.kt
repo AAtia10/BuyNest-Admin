@@ -6,11 +6,14 @@ import com.example.buynest_admin.model.AddProductResponse
 import com.example.buynest_admin.model.CollectionsResponse
 import com.example.buynest_admin.model.DiscountCodePostWrapper
 import com.example.buynest_admin.model.DiscountCodesResponse
+import com.example.buynest_admin.model.GraphQLRequest
+import com.example.buynest_admin.model.GraphQLResponse
 import com.example.buynest_admin.model.InventoryLevelRequest
 import com.example.buynest_admin.model.LocationResponse
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.PriceRulesResponse
 import com.example.buynest_admin.model.ProductsResponse
+import com.example.buynest_admin.model.PublicationsResponse
 import com.example.buynest_admin.model.SingleProductResponse
 import com.example.buynest_admin.model.UpdatePriceRuleWrapper
 import com.example.buynest_admin.model.UpdateProductWrapper
@@ -122,6 +125,28 @@ interface ShopifyService {
         @Path("id") id: Long,
         @Body body: UpdatePriceRuleWrapper
     ): Response<AddPriceRuleResponse>
+
+    @POST("admin/api/2024-04/publications/{publication_id}/publishable_publishings.json")
+    suspend fun publishProductToChannel(
+        @Path("publication_id") publicationId: Long,
+        @Body body: Map<String, String>
+    ): Response<Unit>
+
+
+    @GET("admin/api/2024-04/publications.json")
+    suspend fun getPublications(): Response<PublicationsResponse>
+
+    @POST("admin/api/2024-04/collects.json")
+    suspend fun addProductToCollection(
+        @Body body: Map<String, Map<String, Long>>
+    ): Response<Unit>
+
+    @POST("admin/api/2024-04/graphql.json")
+    suspend fun executeGraphQL(
+        @Body body: GraphQLRequest
+    ): Response<GraphQLResponse<Map<String, Any>>>
+
+
 
 
 }

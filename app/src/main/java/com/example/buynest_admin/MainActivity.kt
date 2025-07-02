@@ -2,6 +2,7 @@ package com.example.buynest_admin
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -21,12 +22,16 @@ import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.buynest_admin.model.GraphQLRequest
 import com.example.buynest_admin.model.NetworkStatusMonitor
+import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
 import com.example.buynest_admin.ui.theme.MainColor
 import com.example.buynest_admin.views.noInternetAnimation.NoInternetAnimation
+import kotlinx.coroutines.launch
 import np.com.susanthapa.curved_bottom_navigation.CbnMenuItem
 import np.com.susanthapa.curved_bottom_navigation.CurvedBottomNavigationView
 
@@ -43,6 +48,78 @@ class MainActivity : ComponentActivity() {
                 BuyNestStart()
             }
         }
+
+        //test
+        lifecycleScope.launch{
+
+            var productId="gid://shopify/Product/8822885253269"
+            var publicationId="gid://shopify/Publication/184228315285"
+
+            var mutation2="""
+    mutation {
+      publishablePublish(
+        id: "gid://shopify/Product/$productId",
+        input: { publicationId: "gid://shopify/Publication/$publicationId" }
+      ) {
+        publishable {
+          publishedOnPublication(publicationId: "gid://shopify/Publication/$publicationId")
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+""".trimIndent()
+
+            var mutation= "mutation {\n" +
+                    "      publishablePublish(input: {\n" +
+                    "        id: \"$productId\",\n" +
+                    "        publicationIds: [\"$publicationId\"]\n" +
+                    "      }) {\n" +
+                    "        publishable {\n" +
+                    "          id\n" +
+                    "        }\n" +
+                    "        userErrors {\n" +
+                    "          field\n" +
+                    "          message\n" +
+                    "        }\n" +
+                    "      }\n" +
+                    "    }"
+var mutation3= """
+    mutation {
+      publishablePublish(
+        id: "${productId}",
+        input: { publicationId: "${publicationId}" }
+       
+      ) {
+        
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+""".trimIndent()
+
+
+//           val result= ShopifyRetrofitBuilder.service.executeGraphQL(GraphQLRequest("query GetPublications{\n" +
+//                    "  publications(first: 10) {\n" +
+//                    "    edges {\n" +
+//                    "      node {\n" +
+//                    "        id\n" +
+//                    "        name\n" +
+//                    "      }\n" +
+//                    "    }\n" +
+//                    "  }\n" +
+//                    "}")  )
+
+
+            val result=ShopifyRetrofitBuilder.service.executeGraphQL(GraphQLRequest(mutation3))
+
+            Log.i("TAG", "onCreate:${result.body()} ")
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

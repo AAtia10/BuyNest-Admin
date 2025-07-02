@@ -3,6 +3,7 @@ package com.example.buynest_admin.repo
 import android.util.Log
 import com.example.buynest_admin.model.AddPriceRulePost
 import com.example.buynest_admin.model.Brand
+import com.example.buynest_admin.model.Category
 import com.example.buynest_admin.model.CustomCollection
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
@@ -142,6 +143,32 @@ class ProductRepository(
     suspend fun updatePriceRule(id: Long, value: String, endsAt: String?): Boolean {
         return remoteDataSource.updatePriceRule(id, value, endsAt)
     }
+
+    suspend fun publishProductToOnlineStore(productId: Long) {
+        remoteDataSource.getPublications().collect { pubs ->
+            val targetPub = pubs.firstOrNull { it.name == "MAD45-Alex-And03" }
+
+            if (targetPub != null) {
+                remoteDataSource.publishProductToChannel(
+                    publicationId = targetPub.id,
+                    productId = productId
+                )
+            } else {
+                throw Exception("Online Store publication not found")
+            }
+        }
+    }
+
+    suspend fun addProductToCollection(productId: Long, collectionId: Long): Flow<Unit> {
+        return remoteDataSource.addProductToCollection(productId, collectionId)
+    }
+
+    suspend fun getAllCategories(): List<Category> {
+        return remoteDataSource.getCategories()
+    }
+
+
+
 
 
 }

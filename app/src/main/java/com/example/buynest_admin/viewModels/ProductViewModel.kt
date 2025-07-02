@@ -6,11 +6,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.buynest_admin.model.Brand
 import com.example.buynest_admin.model.CustomCollection
+import com.example.buynest_admin.model.GraphQLRequest
 import com.example.buynest_admin.model.Location
 import com.example.buynest_admin.model.NewProductPost
 import com.example.buynest_admin.model.Product
 import com.example.buynest_admin.model.Variant
 import com.example.buynest_admin.model.VariantPost
+import com.example.buynest_admin.remote.ShopifyRetrofitBuilder
 import com.example.buynest_admin.repo.ProductRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,7 +69,7 @@ class ProductViewModel(
     }
 
 
-     fun fetchProducts() {
+    fun fetchProducts() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -83,7 +85,7 @@ class ProductViewModel(
         }
     }
 
-     fun handleSearch() {
+    fun handleSearch() {
         viewModelScope.launch {
             searchQuery.collect { query ->
                 repository.getProducts().collect { fullList ->
@@ -153,8 +155,6 @@ class ProductViewModel(
     }
 
 
-
-
     fun fetchProductById(productId: Long) {
         viewModelScope.launch {
             try {
@@ -186,12 +186,14 @@ class ProductViewModel(
 
                     val location = locations.value.firstOrNull()
 
-                    Log.d("UPDATE_VARIANT", """
+                    Log.d(
+                        "UPDATE_VARIANT", """
                     variantId=${variantId}
                     inventory_item_id=${updatedVariant.inventory_item_id}
                     quantity=${variant.inventory_quantity}
                     location=${location?.id}
-                """.trimIndent())
+                """.trimIndent()
+                    )
 
                     if (location != null) {
 
@@ -242,27 +244,44 @@ class ProductViewModel(
     }
 
 
-
     fun addProductWithInventory(
         product: NewProductPost,
         locationId: Long,
         variantInfo: VariantPost,
+
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             try {
                 repository.addProduct(product).collect { addedProduct ->
+
+                    addedProduct.admin_graphql_api_id
                     val newVariant = addedProduct.variants.firstOrNull()
                     if (newVariant != null) {
+                        // Step 1: Set Inventory Level
                         repository.setInventoryLevel(
                             inventoryItemId = newVariant.inventory_item_id,
                             locationId = locationId,
                             available = variantInfo.inventory_quantity
                         ).collect {
+
+                            // Step 2: Auto-publish to Online Store
+                            try {
+                                repository.publishProductToOnlineStore(addedProduct.id)
+                            } catch (e: Exception) {
+                                Log.e("PUBLISH_ERROR", "Publishing failed", e)
+                            }
+
+                            Log.d(
+                                "PUBLISH_CHECK",
+                                "Product published_at: ${addedProduct.published_at}"
+                            )
+
+
+                            // Step 3: Refresh and return
                             fetchProducts()
                             onSuccess()
                             Log.d("DEBUG_RESPONSE", addedProduct.toString())
-
                         }
                     }
                 }
@@ -272,7 +291,74 @@ class ProductViewModel(
         }
     }
 
-    fun deleteProduct(productId: Long, onDone:suspend  () -> Unit) {
+
+    fun addProductWithInventory2(
+        product: NewProductPost,
+        locationId: Long,
+        variantInfo: VariantPost,
+
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                repository.addProduct(product).collect { addedProduct ->
+
+                    var productId = addedProduct.admin_graphql_api_id
+                    var publicationId = "gid://shopify/Publication/184228315285"
+                    var mutation3 = """
+    mutation {
+      publishablePublish(
+        id: "${productId}",
+        input: { publicationId: "${publicationId}" }
+       
+      ) {
+        
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+""".trimIndent()
+                    val result=
+                        ShopifyRetrofitBuilder.service.executeGraphQL(GraphQLRequest(mutation3))
+                    val newVariant = addedProduct.variants.firstOrNull()
+                    if (newVariant != null) {
+                        // Step 1: Set Inventory Level
+                        repository.setInventoryLevel(
+                            inventoryItemId = newVariant.inventory_item_id,
+                            locationId = locationId,
+                            available = variantInfo.inventory_quantity
+                        ).collect {
+
+                            // Step 2: Auto-publish to Online Store
+                            try {
+                                repository.publishProductToOnlineStore(addedProduct.id)
+                            } catch (e: Exception) {
+                                Log.e("PUBLISH_ERROR", "Publishing failed", e)
+                            }
+
+                            Log.d(
+                                "PUBLISH_CHECK",
+                                "Product published_at: ${addedProduct.published_at}"
+                            )
+
+
+                            // Step 3: Refresh and return
+                            fetchProducts()
+                            onSuccess()
+                            Log.d("DEBUG_RESPONSE", addedProduct.toString())
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ViewModel", "Error adding product", e)
+            }
+        }
+    }
+
+
+    fun deleteProduct(productId: Long, onDone: suspend () -> Unit) {
         viewModelScope.launch {
             try {
                 repository.deleteProduct(productId).collect { success ->
@@ -324,9 +410,6 @@ class ProductViewModel(
             }
         }
     }
-
-
-
 
 
 }
